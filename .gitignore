@@ -1,0 +1,35 @@
+# Node dependencies & build outputs
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# Environment variables (chứa mật khẩu DB, JWT_SECRET)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python virtual environment & cache
+venv/
+.venv/
+**/venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Uploaded user files & AI model weights (nặng, không đẩy lên Git)
+backend/uploads/*
+!backend/uploads/.gitkeep
+*.keras
+*.h5
+*.pt
+*.pth
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
