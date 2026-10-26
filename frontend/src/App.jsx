@@ -17,9 +17,9 @@ function MainLayout() {
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
-    <div className="app-container">
+    <div className={isAdmin ? "h-screen w-full overflow-hidden" : "app-container"}>
       {!isAdmin && <Navbar />}
-      <main className="main-content">
+      <main className={isAdmin ? "h-full w-full overflow-hidden" : "main-content"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Compass, Zap } from 'lucide-react';
-import './Footer.css';
 
 const Footer = () => {
   return (

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { UploadCloud, Search, ChevronRight } from "lucide-react";
 import Footer from "../components/Footer";
-import "./Home.css";
 
 const destinations = [
   {
