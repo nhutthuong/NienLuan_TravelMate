@@ -1,14 +1,22 @@
 import React from 'react';
-import { Compass, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 const Footer = () => {
   return (
     <footer className="bg-sky-700 pt-16 border-t border-sky-600 text-sky-50">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
         <div className="lg:col-span-1">
-          <div className="flex items-center gap-2 text-2xl font-bold text-white mb-4">
-            <Compass size={24} className="text-sky-200" />
-            <span>TravelMate</span>
+          <div className="mb-4">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/traveler_filled_white.png"
+                alt="TravelMate"
+                className="w-8 h-8 object-contain drop-shadow-sm"
+              />
+              <span className="text-2xl font-heading font-extrabold tracking-tight text-white">
+                Travel<span className="text-sky-200">Mate</span>
+              </span>
+            </div>
           </div>
           <p className="text-sky-50/90 leading-relaxed mb-6 text-sm">
             Nền tảng gợi ý địa điểm du lịch nổi tiếng ở Việt Nam. Khám phá 10 địa điểm du lịch nổi tiếng với công nghệ nhận diện thị giác máy tính và gợi ý lịch trình cá nhân hóa chuẩn xác.

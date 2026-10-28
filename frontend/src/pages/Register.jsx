@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, Compass, ArrowRight, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -50,8 +50,8 @@ const Register = () => {
 
           {/* Top Logo */}
           <div className="relative z-10">
-            <Link to="/" className="inline-flex items-center gap-2 text-white hover:text-sky-100 transition-colors">
-              <Compass size={36} className="text-sky-200" />
+            <Link to="/" className="inline-flex items-center gap-2.5 text-white hover:text-sky-100 transition-colors group">
+              <img src="/traveler_filled_white.png" alt="TravelMate" className="w-9 h-9 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
               <span className="text-2xl font-extrabold font-heading tracking-wide">TravelMate</span>
             </Link>
             <div className="mt-8">

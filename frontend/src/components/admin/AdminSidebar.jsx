@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Compass, 
   MapPin, 
   Camera, 
   Hotel, 
@@ -41,13 +40,19 @@ const AdminSidebar = ({
         <div className="h-20 shrink-0 flex items-center justify-between px-4 border-b border-white/10 relative">
           {!isSidebarCollapsed ? (
             <>
-              <Link to="/" className="flex items-center gap-2.5 text-white hover:text-sky-200 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-md shrink-0 border border-white/20">
-                  <Compass size={22} className="text-white" />
-                </div>
+              <Link to="/" className="flex items-center gap-2.5 text-white hover:opacity-90 transition-opacity">
+                <img
+                  src="/traveler_filled_white.png"
+                  alt="TravelMate"
+                  className="w-7 h-7 object-contain drop-shadow-sm shrink-0"
+                />
                 <div>
-                  <span className="text-lg font-bold font-heading tracking-wide block leading-none">TravelMate</span>
-                  <span className="text-[10px] text-sky-200 font-mono uppercase tracking-wider font-semibold">Admin Portal</span>
+                  <span className="text-lg font-bold font-heading tracking-wide block leading-none">
+                    Travel<span className="text-sky-200">Mate</span>
+                  </span>
+                  <span className="text-[10px] text-sky-200 font-mono uppercase tracking-wider font-semibold">
+                    Admin Portal
+                  </span>
                 </div>
               </Link>
               <button
@@ -61,10 +66,10 @@ const AdminSidebar = ({
           ) : (
             <button
               onClick={() => setIsSidebarCollapsed(false)}
-              className="w-10 h-10 mx-auto rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center shadow-md transition-all active:scale-95 group relative border border-white/20"
+              className="w-10 h-10 mx-auto rounded-xl bg-white/10 hover:bg-white/20 p-1 flex items-center justify-center shadow-md transition-all active:scale-95 group relative border border-white/20"
               title="Mở rộng menu quản trị"
             >
-              <Compass size={22} className="text-white group-hover:hidden" />
+              <img src="/favicon.png" alt="TravelMate" className="w-6 h-6 object-contain group-hover:hidden drop-shadow-sm" />
               <Menu size={20} className="text-white hidden group-hover:block" />
             </button>
           )}

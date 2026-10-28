@@ -41,7 +41,7 @@ const destinations = [
   },
   {
     name: "Phú Quốc",
-    location: "An Giang",
+    location: "Kiên Giang",
     category: "Nghỉ dưỡng biển",
     image: "/images/phu_quoc.jpg",
   },
