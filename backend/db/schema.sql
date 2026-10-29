@@ -1,9 +1,7 @@
--- ============================================================================
--- SCRIPT KHỞI TẠO CƠ SỞ DỮ LIỆU TRAVELMATE (POSTGRESQL)
--- Tổng cộng: 19 Bảng + 13 Sequences sinh mã tự động
--- ============================================================================
+-- CƠ SỞ DỮ LIỆU TRAVELMATE
+-- 19 Bảng + 13 Sequences sinh mã tự động
 
--- 1. KHỞI TẠO CÁC SEQUENCE ĐỂ TỰ ĐỘNG SINH MÃ DẠNG VARCHAR (ND0001, DD0001...)
+-- KHỞI TẠO CÁC SEQUENCE ĐỂ TỰ ĐỘNG SINH MÃ DẠNG VARCHAR (ND0001, DD0001...)
 CREATE SEQUENCE IF NOT EXISTS seq_nguoi_dung START 1;
 CREATE SEQUENCE IF NOT EXISTS seq_loai_hinh START 1;
 CREATE SEQUENCE IF NOT EXISTS seq_dia_diem START 1;
@@ -17,10 +15,6 @@ CREATE SEQUENCE IF NOT EXISTS seq_ls_tim_kiem START 1;
 CREATE SEQUENCE IF NOT EXISTS seq_yeu_thich START 1;
 CREATE SEQUENCE IF NOT EXISTS seq_danh_gia_ks START 1;
 CREATE SEQUENCE IF NOT EXISTS seq_danh_gia_dtq START 1;
-
--- ============================================================================
--- NHÓM 1: NGƯỜI DÙNG & LOẠI HÌNH DU LỊCH (SỞ THÍCH)
--- ============================================================================
 
 -- Bảng 1: NguoiDung
 CREATE TABLE NguoiDung (
@@ -50,10 +44,6 @@ CREATE TABLE SoThichNguoiDung (
     PRIMARY KEY (MaNguoiDung, MaLoaiHinh)
 );
 
--- ============================================================================
--- NHÓM 2: 10 ĐỊA ĐIỂM DU LỊCH LỚN (RESNET50 DESTINATIONS)
--- ============================================================================
-
 -- Bảng 4: DiaDiem
 CREATE TABLE DiaDiem (
     MaDiaDiem VARCHAR(12) PRIMARY KEY DEFAULT ('DD' || LPAD(nextval('seq_dia_diem')::TEXT, 4, '0')),
@@ -74,10 +64,6 @@ CREATE TABLE DiaDiem_LoaiHinh (
     MaLoaiHinh VARCHAR(12) NOT NULL REFERENCES LoaiHinhDuLich(MaLoaiHinh) ON DELETE CASCADE,
     PRIMARY KEY (MaDiaDiem, MaLoaiHinh)
 );
-
--- ============================================================================
--- NHÓM 3: ĐIỂM THAM QUAN / CHECK-IN CON & HOẠT ĐỘNG
--- ============================================================================
 
 -- Bảng 6: DiemThamQuan
 CREATE TABLE DiemThamQuan (
@@ -124,10 +110,6 @@ CREATE TABLE DiemThamQuan_HoatDong (
     GhiChu TEXT, -- Nullable
     PRIMARY KEY (MaDiemTQ, MaHoatDong)
 );
-
--- ============================================================================
--- NHÓM 4: KHÁCH SẠN / NGHỈ DƯỠNG & TIỆN NGHI
--- ============================================================================
 
 -- Bảng 11: KhachSan
 CREATE TABLE KhachSan (
@@ -177,10 +159,6 @@ CREATE TABLE KhachSan_TienNghi (
     PRIMARY KEY (MaKhachSan, MaTienNghi)
 );
 
--- ============================================================================
--- NHÓM 5: TƯƠNG TÁC CÁ NHÂN (LỊCH SỬ AI, YÊU THÍCH, ĐÁNH GIÁ)
--- ============================================================================
-
 -- Bảng 16: LichSuTimKiem (Lưu lịch sử nhận diện ảnh AI ResNet50)
 CREATE TABLE LichSuTimKiem (
     MaLSTimKiem VARCHAR(12) PRIMARY KEY DEFAULT ('LS' || LPAD(nextval('seq_ls_tim_kiem')::TEXT, 4, '0')),
@@ -220,6 +198,7 @@ CREATE TABLE DanhGiaKhachSan (
     MaKhachSan VARCHAR(12) NOT NULL REFERENCES KhachSan(MaKhachSan) ON DELETE CASCADE,
     DanhGia DECIMAL(2, 1) NOT NULL CHECK (DanhGia >= 1.0 AND DanhGia <= 5.0),
     BinhLuan TEXT,
+    TrangThai VARCHAR(20) NOT NULL DEFAULT 'Approved' CHECK (TrangThai IN ('Approved', 'Flagged')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -230,12 +209,11 @@ CREATE TABLE DanhGiaDiemTQ (
     MaDiemTQ VARCHAR(12) NOT NULL REFERENCES DiemThamQuan(MaDiemTQ) ON DELETE CASCADE,
     DanhGia DECIMAL(2, 1) NOT NULL CHECK (DanhGia >= 1.0 AND DanhGia <= 5.0),
     BinhLuan TEXT,
+    TrangThai VARCHAR(20) NOT NULL DEFAULT 'Approved' CHECK (TrangThai IN ('Approved', 'Flagged')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================================
 -- TẠO INDEX TỐI ƯU TRUY VẤN CHO KHÓA NGOẠI & LẤY ẢNH ĐẠI DIỆN ĐẦU TIÊN
--- ============================================================================
 CREATE INDEX idx_media_dtq_lookup ON MediaDiemThamQuan(MaDiemTQ, media_type, ThuTu);
 CREATE INDEX idx_media_ks_lookup ON MediaKhachSan(MaKhachSan, Media_type, ThuTu);
 CREATE INDEX idx_diemtq_diadiem ON DiemThamQuan(MaDiaDiem);
