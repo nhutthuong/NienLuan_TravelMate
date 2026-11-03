@@ -27,17 +27,17 @@ const getAllHotels = async (
     conditions.push(`(LOWER(ks.ten) LIKE $${pIdx} OR LOWER(COALESCE(ks.diachi, '')) LIKE $${pIdx})`);
   }
 
-  if (minPrice !== null && !isNaN(minPrice)) {
+  if (minPrice !== null && minPrice !== undefined && minPrice !== '' && !isNaN(Number(minPrice))) {
     params.push(parseInt(minPrice, 10));
     conditions.push(`ks.giathamkhao >= $${params.length}`);
   }
 
-  if (maxPrice !== null && !isNaN(maxPrice)) {
+  if (maxPrice !== null && maxPrice !== undefined && maxPrice !== '' && !isNaN(Number(maxPrice))) {
     params.push(parseInt(maxPrice, 10));
     conditions.push(`ks.giathamkhao <= $${params.length}`);
   }
 
-  if (soSao !== null && !isNaN(soSao)) {
+  if (soSao !== null && soSao !== undefined && soSao !== '' && !isNaN(Number(soSao))) {
     params.push(parseFloat(soSao));
     conditions.push(`ks.sosao >= $${params.length}`);
   }
