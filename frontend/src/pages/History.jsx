@@ -16,9 +16,12 @@ import {
   Eye,
   RefreshCw,
   BarChart3,
-  X
+  X,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 
 // Dữ liệu mô phỏng lịch sử nhận diện ảnh AI ResNet50 của thành viên
@@ -152,6 +155,7 @@ const INITIAL_HISTORY = [
 ];
 
 const History = () => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [historyList, setHistoryList] = useState(INITIAL_HISTORY);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,6 +231,102 @@ const History = () => {
   const avgConfidence = totalScans > 0 
     ? (historyList.reduce((acc, curr) => acc + curr.confidence, 0) / totalScans).toFixed(1)
     : 0;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        {/* Top Banner / Hero Header */}
+        <section className="bg-gradient-to-r from-sky-700 via-sky-600 to-cyan-600 text-white pt-32 pb-16 px-6 relative overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-sky-400/20 rounded-full blur-xl pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto relative z-10">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-sky-100 text-xs font-semibold uppercase tracking-wider mb-3 border border-white/20">
+                <Sparkles size={14} className="text-amber-300" />
+                <span>Nhật ký thị giác máy tính ResNet50</span>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-extrabold font-heading text-white tracking-tight">
+                Lịch Sử Nhận Diện AI
+              </h1>
+              <p className="mt-3 text-sky-100 text-base md:text-lg max-w-2xl leading-relaxed">
+                Xem lại các hình ảnh bạn đã tải lên, xác suất tin cậy phân loại từ mô hình Deep Learning và khám phá ngay thông tin địa danh cùng dịch vụ lưu trú.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Content Area */}
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12 flex-1 w-full">
+          <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200/80 shadow-sm">
+            <div className="w-20 h-20 bg-sky-50 border border-sky-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <Camera size={38} className="text-primary" />
+            </div>
+
+            <h2 className="text-2xl font-bold font-heading text-slate-800 mb-3">
+              Bạn chưa đăng nhập tài khoản
+            </h2>
+            <p className="text-slate-500 text-base max-w-lg mx-auto mb-8 leading-relaxed">
+              Vui lòng đăng nhập để xem lại lịch sử quét hình ảnh và kết quả nhận diện phong cảnh từ mô hình AI ResNet50 được lưu trong tài khoản của bạn.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <Link
+                to="/login"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+              >
+                <LogIn size={18} />
+                <span>Đăng nhập ngay</span>
+              </Link>
+              <Link
+                to="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold px-8 py-3 rounded-xl border border-slate-200 transition-all"
+              >
+                <UserPlus size={18} />
+                <span>Tạo tài khoản mới</span>
+              </Link>
+            </div>
+
+            <div className="text-sm text-slate-500 mb-8">
+              Hoặc bạn muốn trải nghiệm nhận diện nhanh không cần lưu lại?{' '}
+              <Link to="/" className="text-primary font-semibold hover:underline">
+                Thử nhận diện ảnh tại Trang chủ &rarr;
+              </Link>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-slate-100 text-left">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-sky-100 text-primary flex items-center justify-center font-bold text-sm mb-2">
+                  <CheckCircle2 size={16} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 mb-1">Mô hình AI ResNet50</h4>
+                <p className="text-xs text-slate-500">Phân loại chính xác 10 địa danh biểu tượng của Việt Nam bằng Deep Learning.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm mb-2">
+                  <CheckCircle2 size={16} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 mb-1">Phân tích Top-3 Softmax</h4>
+                <p className="text-xs text-slate-500">Xem xác suất tin cậy và so sánh đối chiếu giữa các điểm đến tương đồng.</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm mb-2">
+                  <CheckCircle2 size={16} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 mb-1">Lưu trữ đám mây</h4>
+                <p className="text-xs text-slate-500">Nhật ký quét được bảo mật và liên kết trực tiếp vào hồ sơ cá nhân.</p>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">

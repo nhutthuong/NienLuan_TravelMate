@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Heart, MapPin, Star, Trash2, ExternalLink, Search, ChevronDown, Map, Compass, Hotel } from 'lucide-react';
+import { Heart, MapPin, Star, Trash2, ExternalLink, Search, ChevronDown, Map, Compass, Hotel, LogIn, UserPlus, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 
 const MOCK_FAVORITES = [
@@ -69,6 +70,7 @@ const MOCK_FAVORITES = [
 ];
 
 const Wishlist = () => {
+  const { isAuthenticated } = useAuth();
   const [filter, setFilter] = useState('all');
   const [favorites, setFavorites] = useState(MOCK_FAVORITES);
   const [searchQuery, setSearchQuery] = useState('');
@@ -178,6 +180,86 @@ const Wishlist = () => {
       </div>
     );
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="flex-grow bg-slate-50 pt-28 pb-16">
+          <div className="max-w-4xl mx-auto px-6">
+            {/* Header Section */}
+            <div className="mb-10 text-center sm:text-left">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-3 flex items-center justify-center sm:justify-start gap-3">
+                <Heart className="text-rose-500 fill-rose-500" size={34} />
+                Danh Sách Yêu Thích
+              </h1>
+              <p className="text-slate-500 text-base sm:text-lg">
+                Lưu trữ và quản lý những địa điểm, khách sạn mà bạn muốn ghé thăm trong tương lai.
+              </p>
+            </div>
+
+            {/* Guest Empty State Card */}
+            <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-slate-200/80 shadow-sm">
+              <div className="w-20 h-20 bg-rose-50 border border-rose-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Heart size={38} className="text-rose-500" />
+              </div>
+
+              <h2 className="text-2xl font-bold font-heading text-slate-800 mb-3">
+                Bạn chưa đăng nhập tài khoản
+              </h2>
+              <p className="text-slate-500 text-base max-w-lg mx-auto mb-8 leading-relaxed">
+                Vui lòng đăng nhập để xem danh sách yêu thích cá nhân hoặc lưu lại các địa danh, khu nghỉ dưỡng và điểm check-in bạn muốn ghé thăm.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+                <Link
+                  to="/login"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+                >
+                  <LogIn size={18} />
+                  <span>Đăng nhập ngay</span>
+                </Link>
+                <Link
+                  to="/register"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold px-8 py-3 rounded-xl border border-slate-200 transition-all"
+                >
+                  <UserPlus size={18} />
+                  <span>Tạo tài khoản mới</span>
+                </Link>
+              </div>
+
+              {/* Feature Highlights Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-slate-100 text-left">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-sky-100 text-primary flex items-center justify-center font-bold text-sm mb-2">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 mb-1">Lưu trữ không giới hạn</h4>
+                  <p className="text-xs text-slate-500">Đánh dấu tất cả danh lam thắng cảnh và khách sạn bạn yêu thích.</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm mb-2">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 mb-1">Đồng bộ đa thiết bị</h4>
+                  <p className="text-xs text-slate-500">Truy cập danh sách yêu thích mọi lúc mọi nơi trên máy tính hay điện thoại.</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm mb-2">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-800 mb-1">Gợi ý thông minh</h4>
+                  <p className="text-xs text-slate-500">Nhận đề xuất địa điểm tương tự phù hợp với sở thích du lịch của bạn.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

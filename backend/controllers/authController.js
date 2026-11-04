@@ -121,13 +121,13 @@ const login = async (req, res) => {
 
 const googleAuth = async (req, res) => {
   try {
-    const { credential } = req.body;
+    const googleToken = req.body.credential || req.body.accessToken || req.body.token;
 
-    if (!credential) {
-      return res.status(400).json({ message: 'Google credential khong duoc de trong' });
+    if (!googleToken) {
+      return res.status(400).json({ message: 'Google credential / access token khong duoc de trong' });
     }
 
-    const googlePayload = await googleAuthService.verifyGoogleToken(credential);
+    const googlePayload = await googleAuthService.verifyGoogleToken(googleToken);
 
     let user = await userModel.findByGoogleId(googlePayload.googleId);
     let accountLinked = false;
