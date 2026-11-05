@@ -1,0 +1,73 @@
+// 10 dia diem bieu tuong chuan theo giao dien goc
+export const ORIGINAL_DESTINATIONS = [
+  {
+    id: "DD0010",
+    name: "Vịnh Hạ Long",
+    location: "Quảng Ninh",
+    category: "Kỳ quan thiên nhiên",
+    image: "/images/vinh_ha_long.jpg",
+  },
+  {
+    id: "DD0006",
+    name: "Tràng An",
+    location: "Ninh Bình",
+    category: "Di sản kép",
+    image: "/images/trang_an.jpg",
+  },
+  {
+    id: "DD0005",
+    name: "Phố Cổ Hội An",
+    location: "Quảng Nam",
+    category: "Di sản thế giới",
+    image: "/images/hoi_an.jpg",
+  },
+  {
+    id: "DD0003",
+    name: "Cầu Vàng",
+    location: "Đà Nẵng",
+    category: "Điểm nhấn kiến trúc",
+    image: "/images/cau_vang.jpg",
+  },
+  {
+    id: "DD0009",
+    name: "Đỉnh Fansipan",
+    location: "Sapa",
+    category: "Khám phá mạo hiểm",
+    image: "/images/fansipan.jpg",
+  },
+  {
+    id: "DD0001",
+    name: "Chợ Nổi Cái Răng",
+    location: "Cần Thơ",
+    category: "Sông nước miền Tây",
+    image: "/images/cho_noi.jpg",
+  },
+  {
+    id: "DD0008",
+    name: "Phú Quốc",
+    location: "Kiên Giang",
+    category: "Nghỉ dưỡng biển",
+    image: "/images/phu_quoc.jpg",
+  },
+  {
+    id: "DD0002",
+    name: "Hồ Xuân Hương",
+    location: "Đà Lạt",
+    category: "Thành phố ngàn hoa",
+    image: "/images/ho_xuan_huong.jpg",
+  },
+  {
+    id: "DD0007",
+    name: "Mũi Né",
+    location: "Phan Thiết",
+    category: "Nắng vàng biển xanh",
+    image: "/images/mui_ne.jpg",
+  },
+  {
+    id: "DD0004",
+    name: "Hồ Hoàn Kiếm",
+    location: "Hà Nội",
+    category: "Nghìn năm văn hiến",
+    image: "/images/ho_hoan_kiem.jpg",
+  },
+];
