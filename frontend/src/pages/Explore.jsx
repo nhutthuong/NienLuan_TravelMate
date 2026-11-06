@@ -1,205 +1,370 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Filter, Star } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 
-const allDestinations = [
-  {
-    id: 1,
-    name: "Vịnh Hạ Long",
-    location: "Quảng Ninh",
-    category: "Thiên nhiên kỳ quan",
-    image: "/images/vinh_ha_long.jpg",
-    rating: 4.9,
-    reviews: 1205,
-    desc: "Di sản thiên nhiên thế giới với hàng ngàn hòn đảo đá vôi tuyệt đẹp và mặt nước xanh ngắt."
-  },
-  {
-    id: 2,
-    name: "Tràng An",
-    location: "Ninh Bình",
-    category: "Thiên nhiên kỳ quan",
-    image: "/images/trang_an.jpg",
-    rating: 4.8,
-    reviews: 940,
-    desc: "Khu du lịch sinh thái kết hợp tâm linh với hệ thống hang động kỳ bí và phong cảnh hữu tình."
-  },
-  {
-    id: 3,
-    name: "Phố Cổ Hội An",
-    location: "Quảng Nam",
-    category: "Văn hóa",
-    image: "/images/hoi_an.jpg",
-    rating: 4.9,
-    reviews: 2100,
-    desc: "Di sản văn hóa thế giới lưu giữ vẻ đẹp hoài cổ qua từng nếp nhà, ánh đèn lồng rực rỡ."
-  },
-  {
-    id: 4,
-    name: "Cầu Vàng",
-    location: "Đà Nẵng",
-    category: "Khám phá",
-    image: "/images/cau_vang.jpg",
-    rating: 4.7,
-    reviews: 1530,
-    desc: "Biểu tượng kiến trúc độc đáo vắt ngang lưng chừng trời, thu hút du khách toàn cầu."
-  },
-  {
-    id: 5,
-    name: "Đỉnh Fansipan",
-    location: "Sapa",
-    category: "Khám phá",
-    image: "/images/fansipan.jpg",
-    rating: 4.8,
-    reviews: 1120,
-    desc: "Nóc nhà Đông Dương - Điểm đến lý tưởng cho những người đam mê chinh phục."
-  },
-  {
-    id: 6,
-    name: "Chợ Nổi Cái Răng",
-    location: "Cần Thơ",
-    category: "Văn hóa",
-    image: "/images/cho_noi.jpg",
-    rating: 4.6,
-    reviews: 850,
-    desc: "Trải nghiệm văn hóa giao thương đặc sắc trên sông nước miền Tây nhộn nhịp."
-  },
-  {
-    id: 7,
-    name: "Phú Quốc",
-    location: "An Giang",
-    category: "Nghỉ dưỡng",
-    image: "/images/phu_quoc.jpg",
-    rating: 4.9,
-    reviews: 3200,
-    desc: "Đảo ngọc thiên đường với những bãi biển cát trắng mịn màng và hệ sinh thái đa dạng."
-  },
-  {
-    id: 8,
-    name: "Hồ Xuân Hương",
-    location: "Đà Lạt",
-    category: "Nghỉ dưỡng",
-    image: "/images/ho_xuan_huong.jpg",
-    rating: 4.7,
-    reviews: 1800,
-    desc: "Trái tim của thành phố ngàn hoa với không khí se lạnh lãng mạn quanh năm."
-  },
-  {
-    id: 9,
-    name: "Mũi Né",
-    location: "Phan Thiết",
-    category: "Nghỉ dưỡng",
-    image: "/images/mui_ne.jpg",
-    rating: 4.6,
-    reviews: 1450,
-    desc: "Thủ phủ resort với những đồi cát mênh mông vàng óng và biển xanh mát."
-  },
-  {
-    id: 10,
-    name: "Hồ Hoàn Kiếm",
-    location: "Hà Nội",
-    category: "Văn hóa",
-    image: "/images/ho_hoan_kiem.jpg",
-    rating: 4.8,
-    reviews: 2800,
-    desc: "Trái tim thủ đô mang đậm dấu ấn lịch sử nghìn năm văn hiến, bình yên và cổ kính."
-  }
-];
-
-const categories = ["Tất cả", "Thiên nhiên kỳ quan", "Văn hóa", "Nghỉ dưỡng", "Khám phá"];
+// Modular child components
+import ExploreHero from '../components/explore/ExploreHero';
+import ExploreFilterBar from '../components/explore/ExploreFilterBar';
+import ExploreLocationCard from '../components/explore/ExploreLocationCard';
+import ExploreAttractionCard from '../components/explore/ExploreAttractionCard';
+import ExploreHotelCard from '../components/explore/ExploreHotelCard';
+import ExploreEmptyState from '../components/explore/ExploreEmptyState';
 
 const Explore = () => {
-  const [activeCategory, setActiveCategory] = useState("Tất cả");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const locationState = useLocation();
+  const { isAuthenticated } = useAuth();
 
-  const filteredDestinations = allDestinations.filter(dest => {
-    const matchCategory = activeCategory === "Tất cả" || dest.category === activeCategory;
-    const matchSearch = dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dest.location.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
+  // Active Type: 'locations' | 'attractions' | 'hotels'
+  const initialType = searchParams.get('type') || 'locations';
+  const [activeType, setActiveType] = useState(initialType);
+
+  // Search keyword
+  const initialSearch = searchParams.get('search') || '';
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+  // Categories
+  const [categories, setCategories] = useState([]);
+  const initialCats = searchParams.get('categories')
+    ? searchParams.get('categories').split(',').map((c) => c.trim()).filter(Boolean)
+    : searchParams.get('category')
+    ? [searchParams.get('category').trim()]
+    : [];
+  const [selectedCategories, setSelectedCategories] = useState(initialCats);
+
+  // Locations / Destinations list (10 core destinations)
+  const [locationsList, setLocationsList] = useState([]);
+  const initialLocation = searchParams.get('location') || searchParams.get('maDiaDiem') || '';
+  const [selectedLocation, setSelectedLocation] = useState(initialLocation);
+
+  // Hotel specific filters
+  const [priceRange, setPriceRange] = useState(searchParams.get('price') || 'all');
+  const [selectedStars, setSelectedStars] = useState(searchParams.get('stars') || '');
+
+  // Sorting
+  const [sortOption, setSortOption] = useState(searchParams.get('sort') || '');
+
+  // Results state
+  const [dataList, setDataList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 1. Fetch metadata on initial load (Categories & Locations)
+  useEffect(() => {
+    let isMounted = true;
+    const loadInitialMetadata = async () => {
+      try {
+        const [catsRes, locsRes] = await Promise.all([
+          api.locations.getCategories(),
+          api.locations.getAll(),
+        ]);
+        if (isMounted) {
+          setCategories(Array.isArray(catsRes) ? catsRes : []);
+          setLocationsList(Array.isArray(locsRes) ? locsRes : []);
+        }
+      } catch (err) {
+        console.error('Loi khi tai danh muc/dia danh:', err.message);
+      }
+    };
+
+    loadInitialMetadata();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Main Fetch Function based on activeType and filters
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {};
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+      if (selectedCategories.length > 0) {
+        params.maLoaiHinh = selectedCategories.join(',');
+      }
+      if (selectedLocation) {
+        params.maDiaDiem = selectedLocation;
+      }
+
+      let results = [];
+      if (activeType === 'locations') {
+        results = await api.locations.getAll({
+          search: params.search,
+          maLoaiHinh: params.maLoaiHinh,
+        });
+      } else if (activeType === 'attractions') {
+        results = await api.attractions.getAll({
+          search: params.search,
+          maLoaiHinh: params.maLoaiHinh,
+          maDiaDiem: params.maDiaDiem,
+        });
+      } else if (activeType === 'hotels') {
+        // Parse price range
+        let minPrice = null;
+        let maxPrice = null;
+        if (priceRange === 'under_1m') {
+          maxPrice = 1000000;
+        } else if (priceRange === '1m_3m') {
+          minPrice = 1000000;
+          maxPrice = 3000000;
+        } else if (priceRange === '3m_5m') {
+          minPrice = 3000000;
+          maxPrice = 5000000;
+        } else if (priceRange === 'above_5m') {
+          minPrice = 5000000;
+        }
+
+        results = await api.hotels.getAll({
+          search: params.search,
+          maLoaiHinh: params.maLoaiHinh,
+          maDiaDiem: params.maDiaDiem,
+          minPrice,
+          maxPrice,
+          soSao: selectedStars || null,
+          sort: sortOption || '',
+        });
+      }
+
+      setDataList(Array.isArray(results) ? results : []);
+    } catch (err) {
+      console.error('Loi khi loc du lieu:', err.message);
+      setError(err.message || 'Không thể tải danh sách kết quả.');
+      setDataList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    activeType,
+    searchQuery,
+    selectedCategories,
+    selectedLocation,
+    priceRange,
+    selectedStars,
+    sortOption,
+  ]);
+
+  // Trigger fetch when filters change
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Synchronize with URL search params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeType !== 'locations') params.set('type', activeType);
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (selectedCategories.length > 0) params.set('categories', selectedCategories.join(','));
+    if (selectedLocation) params.set('location', selectedLocation);
+    if (priceRange !== 'all') params.set('price', priceRange);
+    if (selectedStars) params.set('stars', selectedStars);
+    if (sortOption) params.set('sort', sortOption);
+
+    setSearchParams(params, { replace: true });
+  }, [
+    activeType,
+    searchQuery,
+    selectedCategories,
+    selectedLocation,
+    priceRange,
+    selectedStars,
+    sortOption,
+    setSearchParams,
+  ]);
+
+  // Handlers
+  const handleToggleCategory = (catId) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
+    );
+  };
+
+  const handleClearCategories = () => {
+    setSelectedCategories([]);
+  };
+
+  const handleResetAll = () => {
+    setSearchQuery('');
+    setSelectedCategories([]);
+    setSelectedLocation('');
+    setPriceRange('all');
+    setSelectedStars('');
+    setSortOption('');
+  };
+
+  const handleToggleWishlist = async (itemId) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: locationState.pathname } });
+      return;
+    }
+
+    try {
+      let payload = {};
+      if (activeType === 'locations') payload = { maDiaDiem: itemId };
+      else if (activeType === 'attractions') payload = { maDiemTQ: itemId };
+      else if (activeType === 'hotels') payload = { maKhachSan: itemId };
+
+      const res = await api.wishlist.toggle(payload);
+
+      setDataList((prev) =>
+        prev.map((item) => {
+          const currentId = item.maDiaDiem || item.maDiemTQ || item.maKhachSan;
+          return currentId === itemId ? { ...item, isFavorited: res.isFavorited } : item;
+        })
+      );
+    } catch (err) {
+      console.error('Loi khi toggle wishlist:', err.message);
+    }
+  };
+
+  const handleBookingRedirect = (bookingUrl, fallbackId) => {
+    if (bookingUrl && bookingUrl !== '#' && bookingUrl.startsWith('http')) {
+      window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      navigate(`/service/hotel/${fallbackId}`);
+    }
+  };
+
+  const formatCurrency = (val) => {
+    if (!val || isNaN(val)) return 'Liên hệ';
+    return new Intl.NumberFormat('vi-VN').format(val) + '₫';
+  };
+
+  const getResultsTitle = () => {
+    if (activeType === 'locations') return 'Địa danh du lịch';
+    if (activeType === 'attractions') return 'Điểm tham quan & Check-in';
+    return 'Khách sạn & Khu nghỉ dưỡng';
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-28">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-extrabold text-slate-900 mb-4">Khám Phá Điểm Đến Tuyệt Vời</h1>
-          <p className="text-slate-500 max-w-2xl mx-auto text-lg">
-            Bộ lọc giúp bạn tìm kiếm và lựa chọn những địa điểm du lịch phù hợp với sở thích cá nhân của bạn.
-          </p>
+    <div className="min-h-screen bg-slate-50 pt-28 pb-16 font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <ExploreHero
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearchSubmit={fetchData}
+        />
+
+        {/* Filter Controls Bar */}
+        <ExploreFilterBar
+          activeType={activeType}
+          setActiveType={setActiveType}
+          categories={categories}
+          selectedCategories={selectedCategories}
+          onToggleCategory={handleToggleCategory}
+          onClearCategories={handleClearCategories}
+          locationsList={locationsList}
+          selectedLocation={selectedLocation}
+          setSelectedLocation={setSelectedLocation}
+          priceRange={priceRange}
+          setPriceRange={setPriceRange}
+          selectedStars={selectedStars}
+          setSelectedStars={setSelectedStars}
+          sortOption={sortOption}
+          setSortOption={setSortOption}
+          onResetAll={handleResetAll}
+        />
+
+        {/* Results Count & Status Header */}
+        <div className="flex flex-wrap justify-between items-center mb-6 text-sm text-slate-600 gap-2">
+          <div>
+            Hiển thị <strong className="text-slate-900">{dataList.length}</strong> {getResultsTitle()}
+            {selectedLocation && (
+              <span>
+                {' '}
+                tại{' '}
+                <strong className="text-sky-700">
+                  {locationsList.find((l) => l.maDiaDiem === selectedLocation)?.ten ||
+                    selectedLocation}
+                </strong>
+              </span>
+            )}
+            {selectedCategories.length > 0 && (
+              <span>
+                {' '}
+                với <strong className="text-slate-800">{selectedCategories.length} chủ đề</strong>
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-12 flex flex-col lg:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full lg:w-96 shrink-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm địa danh, tỉnh thành..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-hide">
-            <Filter size={20} className="text-slate-400 mx-2 shrink-0 hidden md:block" />
-            {categories.map((cat, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-2.5 rounded-xl font-semibold whitespace-nowrap transition-all ${activeCategory === cat
-                  ? "bg-primary text-white shadow-md shadow-primary/30"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+        {/* Grid Content */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-3xl overflow-hidden border border-slate-200 h-96 animate-pulse"
               >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Destinations Grid */}
-        {filteredDestinations.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {filteredDestinations.map(dest => (
-              <div key={dest.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:-translate-y-2 hover:shadow-xl hover:border-primary/50 transition-all duration-300 group cursor-pointer flex flex-col">
-                <div className="relative h-64 overflow-hidden">
-                  <img src={dest.image} alt={dest.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-primary text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                    {dest.category}
-                  </div>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-amber-500 flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
-                    <Star size={14} fill="currentColor" /> {dest.rating}
-                  </div>
-                </div>
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">{dest.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-1 text-slate-500 text-sm mb-4">
-                    <MapPin size={16} />
-                    <span>{dest.location}</span>
-                  </div>
-                  <p className="text-slate-600 text-sm mb-6 flex-1 line-clamp-2">
-                    {dest.desc}
-                  </p>
-                  <div className="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
-                    <span className="text-slate-400 text-xs font-medium">{dest.reviews.toLocaleString()} đánh giá</span>
-                    <button className="text-primary font-semibold text-sm hover:underline flex items-center gap-1">
-                      Xem chi tiết <span>&rarr;</span>
-                    </button>
-                  </div>
+                <div className="h-60 bg-slate-200"></div>
+                <div className="p-6 space-y-3">
+                  <div className="h-5 bg-slate-200 rounded-lg w-2/3"></div>
+                  <div className="h-4 bg-slate-100 rounded-lg w-full"></div>
+                  <div className="h-4 bg-slate-100 rounded-lg w-4/5"></div>
                 </div>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm mb-16">
-            <div className="text-slate-300 mb-4 flex justify-center"><Search size={64} /></div>
-            <h3 className="text-xl font-bold text-slate-700 mb-2">Không tìm thấy kết quả</h3>
-            <p className="text-slate-500">Thử tìm kiếm với một từ khóa khác hoặc xóa bộ lọc.</p>
+        ) : error ? (
+          <div className="bg-rose-50 border border-rose-200 rounded-3xl p-8 text-center max-w-lg mx-auto mb-16">
+            <h3 className="text-lg font-bold text-rose-800 mb-2">Đã xảy ra lỗi khi tải dữ liệu</h3>
+            <p className="text-rose-600 text-sm mb-4">{error}</p>
+            <button
+              onClick={fetchData}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition"
+            >
+              Thử lại
+            </button>
           </div>
+        ) : dataList.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {activeType === 'locations' &&
+              dataList.map((location) => (
+                <ExploreLocationCard
+                  key={location.maDiaDiem}
+                  location={location}
+                  onToggleWishlist={handleToggleWishlist}
+                  onNavigate={(path) => navigate(path)}
+                />
+              ))}
+
+            {activeType === 'attractions' &&
+              dataList.map((attraction) => (
+                <ExploreAttractionCard
+                  key={attraction.maDiemTQ}
+                  attraction={attraction}
+                  onToggleWishlist={handleToggleWishlist}
+                  onNavigate={(path) => navigate(path)}
+                />
+              ))}
+
+            {activeType === 'hotels' &&
+              dataList.map((hotel) => (
+                <ExploreHotelCard
+                  key={hotel.maKhachSan}
+                  hotel={hotel}
+                  onToggleWishlist={handleToggleWishlist}
+                  onNavigate={(path) => navigate(path)}
+                  onBookingRedirect={handleBookingRedirect}
+                  formatCurrency={formatCurrency}
+                />
+              ))}
+          </div>
+        ) : (
+          <ExploreEmptyState
+            searchQuery={searchQuery}
+            onReset={handleResetAll}
+          />
         )}
       </div>
+
       <Footer />
     </div>
   );
