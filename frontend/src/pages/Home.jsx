@@ -124,7 +124,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex-1 flex flex-col bg-slate-50">
       {/* Hero Section */}
       <section className="relative min-h-screen flex justify-center items-center pt-24 pb-8 px-6 bg-[url('/src/assets/hero_bg.jpg')] bg-cover bg-center bg-fixed">
         <div className="absolute top-0 left-0 w-full h-3/5 bg-gradient-to-b from-black/70 to-transparent z-0" />

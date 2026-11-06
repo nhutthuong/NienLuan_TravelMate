@@ -193,41 +193,47 @@ const ServiceDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 font-medium">Đang tải thông tin chi tiết dịch vụ...</p>
+      <div className="flex-1 flex flex-col bg-slate-50 justify-between font-sans">
+        <div className="flex-1 flex items-center justify-center py-32">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 font-medium">Đang tải thông tin chi tiết dịch vụ...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="max-w-4xl mx-auto px-4 pt-36 pb-24 text-center font-sans">
-        <div className="bg-rose-50 border border-rose-200 rounded-3xl p-10 max-w-lg mx-auto">
-          <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy dịch vụ</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ khỏi hệ thống.
-          </p>
-          <div className="flex justify-center gap-3">
-            <Link
-              to="/explore"
-              className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-5 py-2.5 rounded-xl transition"
-            >
-              Khám phá dịch vụ khác
-            </Link>
-            <Link
-              to="/"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl transition"
-            >
-              Về trang chủ
-            </Link>
+      <div className="flex-1 flex flex-col bg-slate-50 justify-between font-sans">
+        <div className="max-w-4xl mx-auto px-4 pt-36 pb-24 text-center flex-1">
+          <div className="bg-rose-50 border border-rose-200 rounded-3xl p-10 max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Building className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy dịch vụ</h2>
+            <p className="text-gray-600 text-sm mb-6">
+              Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ khỏi hệ thống.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Link
+                to="/explore"
+                className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-5 py-2.5 rounded-xl transition"
+              >
+                Khám phá dịch vụ khác
+              </Link>
+              <Link
+                to="/"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl transition"
+              >
+                Về trang chủ
+              </Link>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -237,8 +243,8 @@ const ServiceDetail = () => {
   const averageRating = parseFloat(data.diemDanhGia || (isHotel ? data.soSao : 5.0)).toFixed(1);
 
   return (
-    <>
-      <main className="bg-slate-50 pt-28 pb-20 font-sans">
+    <div className="flex-1 flex flex-col bg-slate-50 justify-between font-sans">
+      <main className="bg-slate-50 pt-28 pb-20 flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <ServiceHeader
@@ -313,7 +319,7 @@ const ServiceDetail = () => {
       )}
 
       <Footer />
-    </>
+    </div>
   );
 };
 

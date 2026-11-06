@@ -7,9 +7,16 @@
 @layer base {
   html {
     scrollbar-gutter: stable;
+    height: 100%;
   }
   body {
     @apply font-sans bg-slate-50 text-slate-800;
+    min-height: 100%;
+  }
+  #root {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
   }
   h1,
   h2,

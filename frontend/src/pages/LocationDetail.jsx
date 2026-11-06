@@ -132,46 +132,52 @@ const LocationDetail = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 font-sans">
-        <div className="h-[460px] bg-slate-200 animate-pulse rounded-3xl mb-10"></div>
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="flex-1 space-y-6">
-            <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-1/3"></div>
-            <div className="h-32 bg-slate-100 animate-pulse rounded-2xl"></div>
-            <div className="h-64 bg-slate-100 animate-pulse rounded-2xl"></div>
+      <div className="flex-1 flex flex-col bg-slate-50 justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 font-sans flex-1">
+          <div className="h-[460px] bg-slate-200 animate-pulse rounded-3xl mb-10"></div>
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 space-y-6">
+              <div className="h-8 bg-slate-200 animate-pulse rounded-xl w-1/3"></div>
+              <div className="h-32 bg-slate-100 animate-pulse rounded-2xl"></div>
+              <div className="h-64 bg-slate-100 animate-pulse rounded-2xl"></div>
+            </div>
+            <div className="w-full lg:w-80 h-96 bg-slate-100 animate-pulse rounded-3xl"></div>
           </div>
-          <div className="w-full lg:w-80 h-96 bg-slate-100 animate-pulse rounded-3xl"></div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (error || !location) {
     return (
-      <div className="max-w-4xl mx-auto px-4 pt-36 pb-24 text-center font-sans">
-        <div className="bg-rose-50 border border-rose-200 rounded-3xl p-10 max-w-lg mx-auto">
-          <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MapPin className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy địa điểm</h2>
-          <p className="text-gray-600 text-sm mb-6">
-            Địa điểm bạn yêu cầu không tồn tại hoặc đã thay đổi thông tin trên hệ thống.
-          </p>
-          <div className="flex justify-center gap-3">
-            <Link
-              to="/explore"
-              className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-5 py-2.5 rounded-xl transition"
-            >
-              Khám phá danh thắng khác
-            </Link>
-            <Link
-              to="/"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl transition"
-            >
-              Về trang chủ
-            </Link>
+      <div className="flex-1 flex flex-col bg-slate-50 justify-between">
+        <div className="max-w-4xl mx-auto px-4 pt-36 pb-24 text-center font-sans flex-1">
+          <div className="bg-rose-50 border border-rose-200 rounded-3xl p-10 max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Không tìm thấy địa điểm</h2>
+            <p className="text-gray-600 text-sm mb-6">
+              Địa điểm bạn yêu cầu không tồn tại hoặc đã thay đổi thông tin trên hệ thống.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Link
+                to="/explore"
+                className="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-5 py-2.5 rounded-xl transition"
+              >
+                Khám phá danh thắng khác
+              </Link>
+              <Link
+                to="/"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl transition"
+              >
+                Về trang chủ
+              </Link>
+            </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -195,8 +201,8 @@ const LocationDetail = () => {
   );
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-14 text-gray-800 font-sans">
+    <div className="flex-1 flex flex-col bg-slate-50 justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-14 text-gray-800 font-sans flex-1">
         {/* Hero Section */}
         <LocationHero
           location={location}
@@ -285,7 +291,7 @@ const LocationDetail = () => {
         )}
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

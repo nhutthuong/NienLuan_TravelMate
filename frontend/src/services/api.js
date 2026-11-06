@@ -151,8 +151,10 @@ export const api = {
     toggle: (payload) => post('/wishlist/toggle', payload),
   },
   history: {
+    get: (params) => get('/history', params),
     getAll: (params) => get('/history', params),
     delete: (id) => del(`/history/${id}`),
+    clear: () => del('/history'),
   },
 
   // Admin

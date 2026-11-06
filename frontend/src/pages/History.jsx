@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Trash2, 
@@ -7,11 +7,8 @@ import {
   ArrowRight, 
   Sparkles, 
   CheckCircle2, 
-  Filter, 
-  ExternalLink, 
   Camera, 
   UploadCloud, 
-  ChevronDown, 
   AlertCircle,
   Eye,
   RefreshCw,
@@ -23,13 +20,51 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import api from '../services/api';
 
-// Dữ liệu mô phỏng lịch sử nhận diện ảnh AI ResNet50 của thành viên
+const LOCATION_FALLBACK_IMAGES = {
+  DD0001: '/images/cho_noi.jpg',
+  DD0002: '/images/ho_xuan_huong.jpg',
+  DD0003: '/images/cau_vang.jpg',
+  DD0004: '/images/ho_hoan_kiem.jpg',
+  DD0005: '/images/hoi_an.jpg',
+  DD0006: '/images/trang_an.jpg',
+  DD0007: '/images/mui_ne.jpg',
+  DD0008: '/images/phu_quoc.jpg',
+  DD0009: '/images/fansipan.jpg',
+  DD0010: '/images/vinh_ha_long.jpg',
+  1: '/images/vinh_ha_long.jpg',
+  2: '/images/trang_an.jpg',
+  3: '/images/cau_vang.jpg',
+  4: '/images/hoi_an.jpg',
+  5: '/images/fansipan.jpg',
+  6: '/images/cho_noi.jpg',
+  7: '/images/phu_quoc.jpg',
+  8: '/images/ho_xuan_huong.jpg',
+  9: '/images/mui_ne.jpg',
+  10: '/images/ho_hoan_kiem.jpg',
+};
+
+const resolveImageUrl = (url, locationId) => {
+  const fallback = (locationId && LOCATION_FALLBACK_IMAGES[locationId]) || '/images/vinh_ha_long.jpg';
+  if (!url || typeof url !== 'string' || url.trim() === '') return fallback;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (url.startsWith('/uploads/')) {
+    const backendOrigin = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : 'http://localhost:5000';
+    return `${backendOrigin}${url}`;
+  }
+  return url;
+};
+
 const INITIAL_HISTORY = [
   {
     id: 'hist-001',
     userUploadedImage: '/images/vinh_ha_long.jpg',
-    analyzedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(), // 35 phút trước
+    analyzedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
     predictedLocation: {
       id: 1,
       name: 'Vịnh Hạ Long',
@@ -50,7 +85,7 @@ const INITIAL_HISTORY = [
   {
     id: 'hist-002',
     userUploadedImage: '/images/trang_an.jpg',
-    analyzedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(), // 3 giờ trước
+    analyzedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
     predictedLocation: {
       id: 2,
       name: 'Tràng An',
@@ -71,7 +106,7 @@ const INITIAL_HISTORY = [
   {
     id: 'hist-003',
     userUploadedImage: '/images/cau_vang.jpg',
-    analyzedAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString(), // 1 ngày trước
+    analyzedAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
     predictedLocation: {
       id: 4,
       name: 'Cầu Vàng',
@@ -92,7 +127,7 @@ const INITIAL_HISTORY = [
   {
     id: 'hist-004',
     userUploadedImage: '/images/hoi_an.jpg',
-    analyzedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString(), // 4 ngày trước
+    analyzedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString(),
     predictedLocation: {
       id: 3,
       name: 'Phố Cổ Hội An',
@@ -113,7 +148,7 @@ const INITIAL_HISTORY = [
   {
     id: 'hist-005',
     userUploadedImage: '/images/fansipan.jpg',
-    analyzedAt: new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString(), // 8 ngày trước
+    analyzedAt: new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString(),
     predictedLocation: {
       id: 5,
       name: 'Đỉnh Fansipan',
@@ -134,7 +169,7 @@ const INITIAL_HISTORY = [
   {
     id: 'hist-006',
     userUploadedImage: '/images/cho_noi.jpg',
-    analyzedAt: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString(), // 15 ngày trước
+    analyzedAt: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString(),
     predictedLocation: {
       id: 6,
       name: 'Chợ Nổi Cái Răng',
@@ -159,31 +194,107 @@ const History = () => {
   const navigate = useNavigate();
   const [historyList, setHistoryList] = useState(INITIAL_HISTORY);
   const [searchQuery, setSearchQuery] = useState('');
-  const [timeFilter, setTimeFilter] = useState('all'); // all, 24h, 7days, 30days
-  const [confidenceFilter, setConfidenceFilter] = useState('all'); // all, high (>98%), standard
-  const [selectedItem, setSelectedItem] = useState(null); // Để hiển thị modal xem chi tiết ảnh & top-k
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [confidenceFilter, setConfidenceFilter] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
-  // Xóa 1 mục khỏi lịch sử
-  const handleDeleteItem = (id) => {
-    setHistoryList(prev => prev.filter(item => item.id !== id));
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isAuthenticated) {
+      const fetchHistory = api.history?.get || api.history?.getAll;
+      if (typeof fetchHistory === 'function') {
+        fetchHistory()
+          .then((res) => {
+            if (!isMounted || !Array.isArray(res) || res.length === 0) return;
+
+            const mapped = res.map((item) => {
+              const topPreds = Array.isArray(item.ketQuaTopK)
+                ? item.ketQuaTopK.map((p) => ({
+                    name: p.name || p.label || p.tenDiaDiem || 'Địa danh',
+                    confidence: parseFloat(p.confidence || (p.score ? (p.score * 100).toFixed(1) : 0)) || 0,
+                  }))
+                : Array.isArray(item.topPredictions)
+                ? item.topPredictions
+                : [
+                    {
+                      name: item.tenDiaDiem || 'Địa danh',
+                      confidence: parseFloat(item.doTinCay || 98.5) || 98.5,
+                    },
+                  ];
+
+              const targetLocId = item.maDiaDiem || item.predictedLocation?.id || 1;
+              const fallbackImage = (targetLocId && LOCATION_FALLBACK_IMAGES[targetLocId]) || '/images/vinh_ha_long.jpg';
+              const rawImage = item.anhTaiLenUrl || item.diaDiemAnhUrl || item.anhDauVao || item.userUploadedImage || fallbackImage;
+
+              return {
+                id: item.maLSTimKiem || item.maLichSu || item.id || `hist-${Math.random()}`,
+                userUploadedImage: resolveImageUrl(rawImage, targetLocId),
+                analyzedAt:
+                  item.searchedAt || item.thoiGianQuet || item.analyzedAt || new Date().toISOString(),
+                predictedLocation: {
+                  id: targetLocId,
+                  name: item.tenDiaDiem || item.predictedLocation?.name || 'Vịnh Hạ Long',
+                  province: item.tinhThanh || item.predictedLocation?.province || 'Quảng Ninh',
+                  category: item.theLoai || item.predictedLocation?.category || 'Kỳ quan thiên nhiên',
+                },
+                confidence: parseFloat(item.doTinCay || item.confidence || 98.5) || 98.5,
+                aiModel: item.moHinh || item.aiModel || 'ResNet50 (Transfer Learning)',
+                status: 'success',
+                topPredictions: topPreds,
+                tags: Array.isArray(item.tags) ? item.tags : ['Thị giác máy tính', 'ResNet50'],
+                notes: item.ghiChu || item.notes || '',
+              };
+            });
+
+            setHistoryList(mapped);
+          })
+          .catch((err) => {
+            console.error('Loi khi tai lich su:', err);
+            // Retain default mock history on error
+          });
+      }
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
+  const handleDeleteItem = async (id) => {
+    try {
+      if (isAuthenticated && typeof api.history?.delete === 'function') {
+        await api.history.delete(id);
+      }
+    } catch (err) {
+      console.error('Loi khi xoa muc lich su:', err);
+    }
+    setHistoryList((prev) => (prev || []).filter((item) => item?.id !== id));
     if (selectedItem?.id === id) {
       setSelectedItem(null);
     }
     setDeleteConfirmId(null);
   };
 
-  // Xóa toàn bộ lịch sử
-  const handleClearAll = () => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử quét nhận diện không?")) {
+  const handleClearAll = async () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử quét nhận diện không?')) {
+      try {
+        if (isAuthenticated && typeof api.history?.clear === 'function') {
+          await api.history.clear();
+        }
+      } catch (err) {
+        console.error('Loi khi xoa tat ca lich su:', err);
+      }
       setHistoryList([]);
       setSelectedItem(null);
     }
   };
 
-  // Format thời gian hiển thị thân thiện tiếng Việt
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Vừa xong';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Vừa xong';
     const now = new Date();
     const diffSec = Math.floor((now - date) / 1000);
 
@@ -191,7 +302,7 @@ const History = () => {
     if (diffSec < 3600) return `${Math.floor(diffSec / 60)} phút trước`;
     if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} giờ trước`;
     if (diffSec < 7 * 86400) return `${Math.floor(diffSec / 86400)} ngày trước`;
-    
+
     return date.toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
@@ -199,42 +310,50 @@ const History = () => {
     });
   };
 
-  // Lọc và tìm kiếm
-  const filteredList = historyList.filter(item => {
-    // Tìm kiếm theo tên địa danh, tỉnh thành hoặc ghi chú
+  const filteredList = (historyList || []).filter((item) => {
+    if (!item) return false;
+    const locName = item.predictedLocation?.name || '';
+    const locProv = item.predictedLocation?.province || '';
+    const tags = Array.isArray(item.tags) ? item.tags : [];
+
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      const matchName = item.predictedLocation.name.toLowerCase().includes(q);
-      const matchProv = item.predictedLocation.province.toLowerCase().includes(q);
-      const matchTags = item.tags.some(t => t.toLowerCase().includes(q));
+      const matchName = locName.toLowerCase().includes(q);
+      const matchProv = locProv.toLowerCase().includes(q);
+      const matchTags = tags.some((t) => typeof t === 'string' && t.toLowerCase().includes(q));
       if (!matchName && !matchProv && !matchTags) return false;
     }
 
-    // Lọc thời gian
     const now = new Date();
     const itemDate = new Date(item.analyzedAt);
-    const diffHours = (now - itemDate) / (1000 * 3600);
+    if (!isNaN(itemDate.getTime())) {
+      const diffHours = (now - itemDate) / (1000 * 3600);
+      if (timeFilter === '24h' && diffHours > 24) return false;
+      if (timeFilter === '7days' && diffHours > 24 * 7) return false;
+      if (timeFilter === '30days' && diffHours > 24 * 30) return false;
+    }
 
-    if (timeFilter === '24h' && diffHours > 24) return false;
-    if (timeFilter === '7days' && diffHours > 24 * 7) return false;
-    if (timeFilter === '30days' && diffHours > 24 * 30) return false;
-
-    // Lọc độ chính xác
-    if (confidenceFilter === 'high' && item.confidence < 98) return false;
-    if (confidenceFilter === 'medium' && (item.confidence < 95 || item.confidence >= 98)) return false;
+    const conf = parseFloat(item.confidence) || 0;
+    if (confidenceFilter === 'high' && conf < 98) return false;
+    if (confidenceFilter === 'medium' && (conf < 95 || conf >= 98)) return false;
 
     return true;
   });
 
-  // Thống kê nhanh
-  const totalScans = historyList.length;
-  const avgConfidence = totalScans > 0 
-    ? (historyList.reduce((acc, curr) => acc + curr.confidence, 0) / totalScans).toFixed(1)
-    : 0;
+  const totalScans = (historyList || []).length;
+  const avgConfidence =
+    totalScans > 0
+      ? (
+          (historyList || []).reduce(
+            (acc, curr) => acc + (parseFloat(curr?.confidence) || 0),
+            0
+          ) / totalScans
+        ).toFixed(1)
+      : '0.0';
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="flex-1 flex flex-col min-h-screen bg-slate-50 font-sans">
         {/* Top Banner / Hero Header */}
         <section className="bg-gradient-to-r from-sky-700 via-sky-600 to-cyan-600 text-white pt-32 pb-16 px-6 relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
@@ -329,10 +448,9 @@ const History = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="flex-1 flex flex-col min-h-screen bg-slate-50 font-sans">
       {/* Top Banner / Hero Header */}
       <section className="bg-gradient-to-r from-sky-700 via-sky-600 to-cyan-600 text-white pt-32 pb-16 px-6 relative overflow-hidden">
-        {/* Subtle decorative circles */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-sky-400/20 rounded-full blur-xl pointer-events-none" />
 
@@ -389,7 +507,7 @@ const History = () => {
                 className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               />
               {searchQuery && (
-                <button 
+                <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-2 py-1 rounded bg-slate-200"
                 >
@@ -404,7 +522,7 @@ const History = () => {
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm">
                 <Calendar size={16} className="text-primary" />
                 <span className="text-slate-500 text-xs font-semibold">Thời gian:</span>
-                <select 
+                <select
                   value={timeFilter}
                   onChange={(e) => setTimeFilter(e.target.value)}
                   className="bg-transparent text-slate-700 font-medium text-sm focus:outline-none cursor-pointer"
@@ -420,7 +538,7 @@ const History = () => {
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-sm">
                 <BarChart3 size={16} className="text-primary" />
                 <span className="text-slate-500 text-xs font-semibold">Độ tin cậy:</span>
-                <select 
+                <select
                   value={confidenceFilter}
                   onChange={(e) => setConfidenceFilter(e.target.value)}
                   className="bg-transparent text-slate-700 font-medium text-sm focus:outline-none cursor-pointer"
@@ -432,7 +550,7 @@ const History = () => {
               </div>
 
               {/* Clear All button */}
-              {historyList.length > 0 && (
+              {(historyList || []).length > 0 && (
                 <button
                   onClick={handleClearAll}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors ml-auto lg:ml-0"
@@ -468,120 +586,133 @@ const History = () => {
         {/* History Items Grid / List */}
         {filteredList.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredList.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group"
-              >
-                {/* Image & Overlay Badges */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                  <img
-                    src={item.userUploadedImage}
-                    alt={item.predictedLocation.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  
-                  {/* Subtle Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/20 pointer-events-none" />
+            {filteredList.map((item) => {
+              const locId = item.predictedLocation?.id || 1;
+              const locName = item.predictedLocation?.name || 'Địa danh';
+              const locCategory = item.predictedLocation?.category || 'Kỳ quan thiên nhiên';
+              const locProvince = item.predictedLocation?.province || 'Việt Nam';
+              const itemTags = Array.isArray(item.tags) ? item.tags : [];
+              const itemConfidence = parseFloat(item.confidence) || 98.5;
 
-                  {/* Confidence Badge */}
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-sky-700 shadow-md flex items-center gap-1.5 border border-sky-100">
-                    <Sparkles size={13} className="text-sky-500" />
-                    <span>Độ tin cậy: {item.confidence}%</span>
-                  </div>
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group"
+                >
+                  {/* Image & Overlay Badges */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                    <img
+                      src={resolveImageUrl(item.userUploadedImage, locId)}
+                      alt={locName}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = LOCATION_FALLBACK_IMAGES[locId] || '/images/vinh_ha_long.jpg';
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
 
-                  {/* Action Delete Single Item */}
-                  <button
-                    onClick={() => setDeleteConfirmId(item.id)}
-                    className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-rose-500 text-slate-600 hover:text-white rounded-full backdrop-blur-md transition-all shadow-md"
-                    title="Xóa mục này"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                    {/* Subtle Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/20 pointer-events-none" />
 
-                  {/* Quick Inspect Button on Hover */}
-                  <button
-                    onClick={() => setSelectedItem(item)}
-                    className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl backdrop-blur-md text-xs font-medium flex items-center gap-1.5 transition-all shadow opacity-90 hover:opacity-100"
-                  >
-                    <Eye size={14} />
-                    <span>Chi tiết AI</span>
-                  </button>
-
-                  {/* Timestamp Tag */}
-                  <div className="absolute bottom-3 left-3 text-white text-xs font-medium drop-shadow flex items-center gap-1">
-                    <Clock size={12} className="text-sky-300" />
-                    <span>{formatTimeAgo(item.analyzedAt)}</span>
-                  </div>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-5 flex-1 flex flex-col justify-between">
-                  <div>
-                    {/* Category & Province */}
-                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-                      <span className="font-semibold text-primary uppercase tracking-wider">
-                        {item.predictedLocation.category}
-                      </span>
-                      <span>{item.predictedLocation.province}</span>
+                    {/* Confidence Badge */}
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-sky-700 shadow-md flex items-center gap-1.5 border border-sky-100">
+                      <Sparkles size={13} className="text-sky-500" />
+                      <span>Độ tin cậy: {itemConfidence}%</span>
                     </div>
 
-                    {/* Location Name */}
-                    <h3 className="text-xl font-bold font-heading text-slate-800 hover:text-primary transition-colors mb-2">
-                      <Link to={`/location/${item.predictedLocation.id}`}>
-                        {item.predictedLocation.name}
-                      </Link>
-                    </h3>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {item.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-medium border border-sky-100"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* AI Confidence Progress Bar */}
-                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
-                      <div className="flex justify-between items-center text-xs mb-1">
-                        <span className="text-slate-500 font-medium">Mô hình phân loại</span>
-                        <span className="font-semibold text-slate-700">ResNet50</span>
-                      </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-sky-500 to-primary h-full rounded-full transition-all duration-500"
-                          style={{ width: `${item.confidence}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Actions Footer */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                    {/* Action Delete Single Item */}
                     <button
-                      onClick={() => setSelectedItem(item)}
-                      className="text-xs font-semibold text-slate-600 hover:text-primary transition-colors flex items-center gap-1"
+                      onClick={() => setDeleteConfirmId(item.id)}
+                      className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-rose-500 text-slate-600 hover:text-white rounded-full backdrop-blur-md transition-all shadow-md"
+                      title="Xóa mục này"
                     >
-                      <BarChart3 size={14} />
-                      <span>Xác suất Top-3</span>
+                      <Trash2 size={15} />
                     </button>
 
-                    <Link
-                      to={`/location/${item.predictedLocation.id}`}
-                      className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm hover:shadow"
+                    {/* Quick Inspect Button on Hover */}
+                    <button
+                      onClick={() => setSelectedItem(item)}
+                      className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl backdrop-blur-md text-xs font-medium flex items-center gap-1.5 transition-all shadow opacity-90 hover:opacity-100"
                     >
-                      <span>Xem điểm đến</span>
-                      <ArrowRight size={14} />
-                    </Link>
+                      <Eye size={14} />
+                      <span>Chi tiết AI</span>
+                    </button>
+
+                    {/* Timestamp Tag */}
+                    <div className="absolute bottom-3 left-3 text-white text-xs font-medium drop-shadow flex items-center gap-1">
+                      <Clock size={12} className="text-sky-300" />
+                      <span>{formatTimeAgo(item.analyzedAt)}</span>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      {/* Category & Province */}
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                        <span className="font-semibold text-primary uppercase tracking-wider">
+                          {locCategory}
+                        </span>
+                        <span>{locProvince}</span>
+                      </div>
+
+                      {/* Location Name */}
+                      <h3 className="text-xl font-bold font-heading text-slate-800 hover:text-primary transition-colors mb-2">
+                        <Link to={`/location/${locId}`}>
+                          {locName}
+                        </Link>
+                      </h3>
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {itemTags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-medium border border-sky-100"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* AI Confidence Progress Bar */}
+                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                        <div className="flex justify-between items-center text-xs mb-1">
+                          <span className="text-slate-500 font-medium">Mô hình phân loại</span>
+                          <span className="font-semibold text-slate-700">ResNet50</span>
+                        </div>
+                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-sky-500 to-primary h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(0, itemConfidence))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Card Actions Footer */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+                      <button
+                        onClick={() => setSelectedItem(item)}
+                        className="text-xs font-semibold text-slate-600 hover:text-primary transition-colors flex items-center gap-1"
+                      >
+                        <BarChart3 size={14} />
+                        <span>Xác suất Top-3</span>
+                      </button>
+
+                      <Link
+                        to={`/location/${locId}`}
+                        className="inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-sm hover:shadow"
+                      >
+                        <span>Xem điểm đến</span>
+                        <ArrowRight size={14} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* Empty State */
@@ -594,12 +725,12 @@ const History = () => {
             </h2>
             <p className="text-slate-500 text-sm max-w-md mx-auto mb-8 leading-relaxed">
               {searchQuery || timeFilter !== 'all' || confidenceFilter !== 'all'
-                ? "Không có ảnh nào khớp với bộ lọc tìm kiếm hiện tại. Hãy thử chọn khoảng thời gian khác hoặc đặt lại bộ lọc."
-                : "Bạn chưa thực hiện quét nhận diện hình ảnh nào. Hãy tải lên ảnh phong cảnh du lịch của bạn để ResNet50 bóc tách địa danh ngay nhé!"}
+                ? 'Không có ảnh nào khớp với bộ lọc tìm kiếm hiện tại. Hãy thử chọn khoảng thời gian khác hoặc đặt lại bộ lọc.'
+                : 'Bạn chưa thực hiện quét nhận diện hình ảnh nào. Hãy tải lên ảnh phong cảnh du lịch của bạn để ResNet50 bóc tách địa danh ngay nhé!'}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              {(searchQuery || timeFilter !== 'all' || confidenceFilter !== 'all') ? (
+              {searchQuery || timeFilter !== 'all' || confidenceFilter !== 'all' ? (
                 <button
                   onClick={() => {
                     setSearchQuery('');
@@ -678,8 +809,13 @@ const History = () => {
               {/* Image Preview & Overview */}
               <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <img
-                  src={selectedItem.userUploadedImage}
-                  alt={selectedItem.predictedLocation.name}
+                  src={resolveImageUrl(selectedItem.userUploadedImage, selectedItem.predictedLocation?.id)}
+                  alt={selectedItem.predictedLocation?.name || 'Địa danh'}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    const locId = selectedItem.predictedLocation?.id;
+                    e.currentTarget.src = (locId && LOCATION_FALLBACK_IMAGES[locId]) || '/images/vinh_ha_long.jpg';
+                  }}
                   className="w-full sm:w-44 h-36 rounded-xl object-cover shadow-sm border border-white"
                 />
                 <div className="flex-1 space-y-2 text-center sm:text-left w-full">
@@ -687,14 +823,14 @@ const History = () => {
                     Dự đoán hàng đầu
                   </span>
                   <h4 className="text-2xl font-bold font-heading text-slate-800">
-                    {selectedItem.predictedLocation.name}
+                    {selectedItem.predictedLocation?.name || 'Địa danh'}
                   </h4>
                   <p className="text-sm text-slate-600">
-                    {selectedItem.predictedLocation.province} • {selectedItem.predictedLocation.category}
+                    {selectedItem.predictedLocation?.province || 'Việt Nam'} • {selectedItem.predictedLocation?.category || 'Kỳ quan thiên nhiên'}
                   </p>
                   <div className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1">
                     <Clock size={13} />
-                    <span>Đã quét: {new Date(selectedItem.analyzedAt).toLocaleString('vi-VN')}</span>
+                    <span>Đã quét: {new Date(selectedItem.analyzedAt || Date.now()).toLocaleString('vi-VN')}</span>
                   </div>
                 </div>
               </div>
@@ -706,26 +842,29 @@ const History = () => {
                   <span>Phân Bố Xác Suất Top-3 (Softmax Probability)</span>
                 </h4>
                 <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
-                  {selectedItem.topPredictions.map((pred, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className={idx === 0 ? "text-primary font-bold" : "text-slate-600"}>
-                          #{idx + 1} {pred.name}
-                        </span>
-                        <span className={idx === 0 ? "text-primary font-bold" : "text-slate-600"}>
-                          {pred.confidence}%
-                        </span>
+                  {(selectedItem.topPredictions || []).map((pred, idx) => {
+                    const predConf = parseFloat(pred?.confidence) || 0;
+                    return (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className={idx === 0 ? 'text-primary font-bold' : 'text-slate-600'}>
+                            #{idx + 1} {pred?.name || 'Địa danh'}
+                          </span>
+                          <span className={idx === 0 ? 'text-primary font-bold' : 'text-slate-600'}>
+                            {predConf}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              idx === 0 ? 'bg-gradient-to-r from-sky-500 to-primary' : 'bg-slate-400'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, predConf))}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            idx === 0 ? "bg-gradient-to-r from-sky-500 to-primary" : "bg-slate-400"
-                          }`}
-                          style={{ width: `${pred.confidence}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -733,7 +872,7 @@ const History = () => {
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block mb-1">Mạng nơ-ron:</span>
-                  <span className="font-semibold text-slate-800">{selectedItem.aiModel}</span>
+                  <span className="font-semibold text-slate-800">{selectedItem.aiModel || 'ResNet50 (Transfer Learning)'}</span>
                 </div>
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-slate-500 block mb-1">Kích thước ảnh đầu vào:</span>
@@ -768,7 +907,7 @@ const History = () => {
                   Đóng
                 </button>
                 <Link
-                  to={`/location/${selectedItem.predictedLocation.id}`}
+                  to={`/location/${selectedItem.predictedLocation?.id || 1}`}
                   className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5"
                 >
                   <span>Xem chi tiết địa danh</span>

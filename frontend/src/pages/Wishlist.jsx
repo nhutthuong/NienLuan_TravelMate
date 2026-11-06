@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MapPin, Star, Trash2, ExternalLink, Search, ChevronDown, Map, Compass, Hotel, LogIn, UserPlus, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import api from '../services/api';
 
 const MOCK_FAVORITES = [
   {
@@ -76,9 +77,82 @@ const Wishlist = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
 
-  let processedFavorites = favorites.filter(item => {
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isAuthenticated) {
+      api.wishlist
+        .get()
+        .then((res) => {
+          if (!isMounted || !res) return;
+
+          const mapped = [];
+
+          (res.locations || []).forEach((loc) => {
+            mapped.push({
+              id: loc.maDiaDiem,
+              type: 'location',
+              title: loc.tenDiaDiem,
+              location: loc.tinhThanh || 'Việt Nam',
+              image: loc.anhUrl || loc.anh_url || loc.hinhAnh || '/images/vinh_ha_long.jpg',
+              rating: parseFloat(loc.danhGiaTB) || 4.8,
+              reviews: loc.soLuotDanhGia || 1200,
+              dateAdded: loc.ngayLuu || new Date().toISOString(),
+            });
+          });
+
+          (res.attractions || []).forEach((att) => {
+            mapped.push({
+              id: att.maDiemTQ,
+              maDiaDiem: att.maDiaDiem,
+              type: 'checkin',
+              title: att.tenDiem,
+              location: att.diaChi || att.tenDiaDiem || 'Điểm check-in',
+              image: att.anhUrl || att.anh_url || att.hinhAnh || '/images/cau_vang.jpg',
+              rating: parseFloat(att.danhGiaTB) || 4.7,
+              reviews: att.soLuotDanhGia || 800,
+              dateAdded: att.ngayLuu || new Date().toISOString(),
+            });
+          });
+
+          (res.hotels || []).forEach((hotel) => {
+            const priceVal = hotel.giaThapNhat || hotel.giaTB;
+            const formattedPrice = priceVal
+              ? new Intl.NumberFormat('vi-VN').format(priceVal) + 'đ'
+              : 'Liên hệ';
+
+            mapped.push({
+              id: hotel.maKhachSan,
+              type: 'hotel',
+              title: hotel.tenKhachSan,
+              location: hotel.diaChi || hotel.tenDiaDiem || 'Khách sạn',
+              image: hotel.anhUrl || hotel.anh_url || hotel.hinhAnh || '/images/mui_ne.jpg',
+              rating: parseFloat(hotel.danhGiaTB) || 4.8,
+              reviews: hotel.soLuotDanhGia || 500,
+              price: formattedPrice,
+              dateAdded: hotel.ngayLuu || new Date().toISOString(),
+            });
+          });
+
+          if (mapped.length > 0) {
+            setFavorites(mapped);
+          } else {
+            setFavorites([]);
+          }
+        })
+        .catch(() => {
+          // If error or unauthenticated, keep mock data
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
+  let processedFavorites = favorites.filter((item) => {
     if (filter !== 'all' && item.type !== filter) return false;
-    
+
     if (searchQuery.trim() === '') return true;
     const query = searchQuery.toLowerCase();
     return item.title.toLowerCase().includes(query) || item.location.toLowerCase().includes(query);
@@ -86,9 +160,9 @@ const Wishlist = () => {
 
   const now = new Date();
   if (sortBy === '1_day') {
-    processedFavorites = processedFavorites.filter(item => (now - new Date(item.dateAdded)) <= 24 * 60 * 60 * 1000);
+    processedFavorites = processedFavorites.filter((item) => now - new Date(item.dateAdded) <= 24 * 60 * 60 * 1000);
   } else if (sortBy === '1_week') {
-    processedFavorites = processedFavorites.filter(item => (now - new Date(item.dateAdded)) <= 7 * 24 * 60 * 60 * 1000);
+    processedFavorites = processedFavorites.filter((item) => now - new Date(item.dateAdded) <= 7 * 24 * 60 * 60 * 1000);
   }
 
   processedFavorites.sort((a, b) => {
@@ -98,18 +172,29 @@ const Wishlist = () => {
     return new Date(b.dateAdded) - new Date(a.dateAdded);
   });
 
-  const removeFavorite = (id) => {
-    setFavorites(favorites.filter(item => item.id !== id));
+  const removeFavorite = async (item) => {
+    try {
+      if (isAuthenticated) {
+        let payload = {};
+        if (item.type === 'location') payload = { maDiaDiem: item.id };
+        else if (item.type === 'checkin') payload = { maDiemTQ: item.id };
+        else if (item.type === 'hotel') payload = { maKhachSan: item.id };
+        await api.wishlist.toggle(payload);
+      }
+    } catch (err) {
+      console.error('Loi khi xoa khoi wishlist:', err);
+    }
+    setFavorites((prev) => prev.filter((i) => !(i.id === item.id && i.type === item.type)));
   };
 
   const countAll = favorites.length;
-  const countLocation = favorites.filter(i => i.type === 'location').length;
-  const countHotel = favorites.filter(i => i.type === 'hotel').length;
-  const countCheckin = favorites.filter(i => i.type === 'checkin').length;
+  const countLocation = favorites.filter((i) => i.type === 'location').length;
+  const countHotel = favorites.filter((i) => i.type === 'hotel').length;
+  const countCheckin = favorites.filter((i) => i.type === 'checkin').length;
 
-  const locations = processedFavorites.filter(i => i.type === 'location');
-  const hotels = processedFavorites.filter(i => i.type === 'hotel');
-  const checkins = processedFavorites.filter(i => i.type === 'checkin');
+  const locations = processedFavorites.filter((i) => i.type === 'location');
+  const hotels = processedFavorites.filter((i) => i.type === 'hotel');
+  const checkins = processedFavorites.filter((i) => i.type === 'checkin');
 
   const renderGrid = (items, typeName) => {
     if (items.length === 0) return null;
@@ -128,7 +213,10 @@ const Wishlist = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {items.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+            <div
+              key={`${item.type}-${item.id}`}
+              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col"
+            >
               <div className="relative h-56 overflow-hidden">
                 <img
                   src={item.image}
@@ -142,7 +230,7 @@ const Wishlist = () => {
                   </span>
                 </div>
                 <button
-                  onClick={() => removeFavorite(item.id)}
+                  onClick={() => removeFavorite(item)}
                   className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-rose-500 hover:bg-rose-500 hover:text-white transition-colors shadow-sm z-10"
                   title="Xóa khỏi danh sách"
                 >
@@ -150,7 +238,7 @@ const Wishlist = () => {
                 </button>
               </div>
 
-              <div className="p-5">
+              <div className="p-5 flex-1 flex flex-col">
                 <div className="flex items-center gap-1.5 text-blue-600 mb-1 text-xs font-bold uppercase">
                   <span className="truncate">{item.location}</span>
                 </div>
@@ -163,12 +251,21 @@ const Wishlist = () => {
                       <span className="text-xs font-bold text-amber-700">{item.rating}</span>
                     </div>
                     {item.price && (
-                      <span className="text-blue-700 font-bold mt-1 text-lg">{item.price}<span className="text-xs font-normal text-slate-500">/đêm</span></span>
+                      <span className="text-blue-700 font-bold mt-1 text-lg">
+                        {item.price}
+                        <span className="text-xs font-normal text-slate-500">/đêm</span>
+                      </span>
                     )}
                   </div>
                   <Link
-                    to={item.type === 'location' || item.type === 'checkin' ? `/location/${item.id}` : `/service/hotel/${item.id}`}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                    to={
+                      item.type === 'location'
+                        ? `/location/${item.id}`
+                        : item.type === 'checkin'
+                        ? `/service/attraction/${item.id}`
+                        : `/service/hotel/${item.id}`
+                    }
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-sm"
                   >
                     {item.type === 'hotel' ? 'Đặt phòng' : 'Chi tiết'} <ExternalLink size={14} />
                   </Link>
@@ -183,8 +280,8 @@ const Wishlist = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-grow bg-slate-50 pt-28 pb-16">
+      <div className="flex-1 flex flex-col min-h-screen bg-slate-50 font-sans">
+        <div className="flex-grow pt-28 pb-16">
           <div className="max-w-4xl mx-auto px-6">
             {/* Header Section */}
             <div className="mb-10 text-center sm:text-left">
@@ -262,10 +359,9 @@ const Wishlist = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-grow bg-slate-50 pt-28 pb-12">
+    <div className="flex-1 flex flex-col min-h-screen bg-slate-50 font-sans">
+      <div className="flex-grow pt-28 pb-12">
         <div className="max-w-7xl mx-auto px-6">
-
           {/* Header Section */}
           <div className="mb-10">
             <h1 className="text-4xl font-extrabold text-slate-900 mb-4 flex items-center gap-3">
@@ -279,7 +375,6 @@ const Wishlist = () => {
 
           {/* Layout: Sidebar (Left) + Content (Right) */}
           <div className="flex flex-col lg:flex-row gap-8 items-start">
-
             {/* Sidebar Filter (Left) */}
             <div className="w-full lg:w-1/4 shrink-0 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 sticky top-28 z-20">
               <h3 className="text-lg font-bold text-slate-800 mb-5">Bộ lọc & Tìm kiếm</h3>
@@ -320,35 +415,85 @@ const Wishlist = () => {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${filter === 'all' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
-                      }`}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                      filter === 'all'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
+                    }`}
                   >
                     <span>Tất cả mục đã lưu</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${filter === 'all' ? 'bg-blue-500/50 text-white' : 'bg-white text-slate-500 shadow-sm border border-slate-200'}`}>{countAll}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        filter === 'all'
+                          ? 'bg-blue-500/50 text-white'
+                          : 'bg-white text-slate-500 shadow-sm border border-slate-200'
+                      }`}
+                    >
+                      {countAll}
+                    </span>
                   </button>
                   <button
                     onClick={() => setFilter('location')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${filter === 'location' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
-                      }`}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                      filter === 'location'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
+                    }`}
                   >
-                    <div className="flex items-center gap-2"><Map size={18} /> Địa điểm</div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${filter === 'location' ? 'bg-blue-500/50 text-white' : 'bg-white text-slate-500 shadow-sm border border-slate-200'}`}>{countLocation}</span>
+                    <div className="flex items-center gap-2">
+                      <Map size={18} /> Địa điểm
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        filter === 'location'
+                          ? 'bg-blue-500/50 text-white'
+                          : 'bg-white text-slate-500 shadow-sm border border-slate-200'
+                      }`}
+                    >
+                      {countLocation}
+                    </span>
                   </button>
                   <button
                     onClick={() => setFilter('hotel')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${filter === 'hotel' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
-                      }`}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                      filter === 'hotel'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
+                    }`}
                   >
-                    <div className="flex items-center gap-2"><Hotel size={18} /> Resort & Khách sạn</div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${filter === 'hotel' ? 'bg-blue-500/50 text-white' : 'bg-white text-slate-500 shadow-sm border border-slate-200'}`}>{countHotel}</span>
+                    <div className="flex items-center gap-2">
+                      <Hotel size={18} /> Resort & Khách sạn
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        filter === 'hotel'
+                          ? 'bg-blue-500/50 text-white'
+                          : 'bg-white text-slate-500 shadow-sm border border-slate-200'
+                      }`}
+                    >
+                      {countHotel}
+                    </span>
                   </button>
                   <button
                     onClick={() => setFilter('checkin')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${filter === 'checkin' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
-                      }`}
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                      filter === 'checkin'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
+                    }`}
                   >
-                    <div className="flex items-center gap-2"><Compass size={18} /> Điểm Check-in</div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${filter === 'checkin' ? 'bg-blue-500/50 text-white' : 'bg-white text-slate-500 shadow-sm border border-slate-200'}`}>{countCheckin}</span>
+                    <div className="flex items-center gap-2">
+                      <Compass size={18} /> Điểm Check-in
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        filter === 'checkin'
+                          ? 'bg-blue-500/50 text-white'
+                          : 'bg-white text-slate-500 shadow-sm border border-slate-200'
+                      }`}
+                    >
+                      {countCheckin}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -368,12 +513,12 @@ const Wishlist = () => {
                     <Heart size={40} className="text-blue-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                    {favorites.length === 0 ? "Chưa có mục yêu thích nào" : "Không tìm thấy mục nào"}
+                    {favorites.length === 0 ? 'Chưa có mục yêu thích nào' : 'Không tìm thấy mục nào'}
                   </h3>
                   <p className="text-slate-500 max-w-md mx-auto mb-8">
-                    {favorites.length === 0 
-                      ? "Bạn chưa lưu địa điểm hay khách sạn nào. Hãy tiếp tục khám phá và lưu lại những nơi bạn muốn đến nhé!" 
-                      : "Không có mục nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn."}
+                    {favorites.length === 0
+                      ? 'Bạn chưa lưu địa điểm hay khách sạn nào. Hãy tiếp tục khám phá và lưu lại những nơi bạn muốn đến nhé!'
+                      : 'Không có mục nào khớp với bộ lọc hoặc từ khóa tìm kiếm của bạn.'}
                   </p>
                 </div>
               )}
