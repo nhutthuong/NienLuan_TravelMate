@@ -198,9 +198,11 @@ const getMe = async (req, res) => {
       hoTen: user.hoten,
       email: user.email,
       avatarUrl: user.avatar_url,
+      ngaySinh: user.ngaysinh,
       vaiTro: user.vaitro,
       trangThai: user.trangthai,
       phuongThucXacThuc: user.phuongthucxacthuc,
+      createdAt: user.created_at,
       soThich: prefs.map((p) => p.maloaihinh),
     });
   } catch (err) {
@@ -228,11 +230,109 @@ const updatePreferences = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { hoTen, avatarUrl, ngaySinh } = req.body;
+    const maNguoiDung = req.user.maNguoiDung;
+
+    if (hoTen !== undefined && !hoTen.trim()) {
+      return res.status(400).json({ message: 'Họ tên không được để trống' });
+    }
+
+    const updatedUser = await userModel.updateProfile(maNguoiDung, {
+      hoTen,
+      avatarUrl,
+      ngaySinh,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    const prefs = await userModel.getPreferences(maNguoiDung);
+
+    return res.status(200).json({
+      message: 'Cập nhật thông tin hồ sơ thành công',
+      user: {
+        maNguoiDung: updatedUser.manguoidung,
+        hoTen: updatedUser.hoten,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatar_url,
+        ngaySinh: updatedUser.ngaysinh,
+        vaiTro: updatedUser.vaitro,
+        trangThai: updatedUser.trangthai,
+        phuongThucXacThuc: updatedUser.phuongthucxacthuc,
+        createdAt: updatedUser.created_at,
+        soThich: prefs.map((p) => p.maloaihinh),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: `Lỗi máy chủ: ${err.message}` });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { matKhauHienTai, matKhauMoi } = req.body;
+    const maNguoiDung = req.user.maNguoiDung;
+
+    const user = await userModel.findById(maNguoiDung);
+    if (!user) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+
+    // Đảm bảo phân biệt tài khoản Google OAuth với tài khoản mật khẩu
+    if (user.phuongthucxacthuc !== 'local' || !user.matkhau_hash) {
+      return res.status(400).json({
+        message: 'Tài khoản của bạn đăng nhập thông qua Google OAuth. Bạn không cần và không thể đặt mật khẩu riêng trên TravelMate.',
+      });
+    }
+
+    if (!matKhauHienTai || !matKhauMoi) {
+      return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới' });
+    }
+
+    if (matKhauMoi.length < 6) {
+      return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+
+    const isMatch = await bcrypt.compare(matKhauHienTai, user.matkhau_hash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác' });
+    }
+
+    const newHash = await bcrypt.hash(matKhauMoi, 10);
+    await userModel.updatePassword(maNguoiDung, newHash);
+
+    return res.status(200).json({ message: 'Đổi mật khẩu thành công' });
+  } catch (err) {
+    return res.status(500).json({ message: `Lỗi máy chủ: ${err.message}` });
+  }
+};
+
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui lòng chọn tệp hình ảnh' });
+    }
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    return res.status(200).json({
+      message: 'Tải ảnh đại diện thành công',
+      avatarUrl,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: `Lỗi tải ảnh đại diện: ${err.message}` });
+  }
+};
+
 module.exports = {
   register,
   login,
   googleAuth,
   getMe,
   updatePreferences,
+  updateProfile,
+  changePassword,
+  uploadAvatar,
 };
 

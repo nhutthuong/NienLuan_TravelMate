@@ -111,6 +111,13 @@ export const api = {
     google: (credentialOrToken) => post('/auth/google', { credential: credentialOrToken, token: credentialOrToken }),
     getMe: () => get('/auth/me'),
     updatePreferences: (maLoaiHinhList) => put('/auth/preferences', { maLoaiHinhList }),
+    updateProfile: (payload) => put('/auth/profile', payload),
+    changePassword: (payload) => put('/auth/password', payload),
+    uploadAvatar: (file) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      return post('/auth/avatar', formData);
+    },
   },
 
   // Locations & Categories

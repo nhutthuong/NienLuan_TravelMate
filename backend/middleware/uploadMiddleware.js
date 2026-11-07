@@ -4,12 +4,16 @@ const fs = require('fs');
 
 const mediaDir = path.join(__dirname, '../uploads/media');
 const historyDir = path.join(__dirname, '../uploads/history');
+const avatarDir = path.join(__dirname, '../uploads/avatars');
 
 if (!fs.existsSync(mediaDir)) {
   fs.mkdirSync(mediaDir, { recursive: true });
 }
 if (!fs.existsSync(historyDir)) {
   fs.mkdirSync(historyDir, { recursive: true });
+}
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
 }
 
 const fileFilter = (req, file, cb) => {
@@ -46,10 +50,29 @@ const uploadMedia = multer({
   fileFilter,
 });
 
+const avatarDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, avatarDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `avatar-${uniqueSuffix}${ext}`);
+  },
+});
+
+const uploadAvatar = multer({
+  storage: avatarDiskStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter,
+});
+
 module.exports = {
   uploadPredict,
   uploadMedia,
+  uploadAvatar,
   mediaDir,
   historyDir,
+  avatarDir,
 };
 

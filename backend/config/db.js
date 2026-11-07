@@ -11,8 +11,13 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'travelmate_db',
 });
 
+let isConnectedLogged = false;
+
 pool.on('connect', () => {
-  console.log('Connected to PostgreSQL database:', process.env.DB_NAME || 'travelmate_db');
+  if (!isConnectedLogged) {
+    console.log('Connected to PostgreSQL database:', process.env.DB_NAME || 'travelmate_db');
+    isConnectedLogged = true;
+  }
 });
 
 pool.on('error', (err) => {

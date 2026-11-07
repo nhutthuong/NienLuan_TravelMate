@@ -30,9 +30,11 @@ export const AuthProvider = ({ children }) => {
         hoTen: data.hoTen,
         email: data.email,
         avatarUrl: data.avatarUrl,
+        ngaySinh: data.ngaySinh,
         vaiTro: data.vaiTro,
         trangThai: data.trangThai,
         phuongThucXacThuc: data.phuongThucXacThuc,
+        createdAt: data.createdAt,
         soThich: Array.isArray(data.soThich) ? data.soThich : [],
       });
     } catch (err) {
@@ -81,6 +83,14 @@ export const AuthProvider = ({ children }) => {
     return newPreferences;
   };
 
+  const updateProfile = useCallback(async (profileData) => {
+    const res = await api.auth.updateProfile(profileData);
+    if (res?.user) {
+      setUser((prev) => (prev ? { ...prev, ...res.user } : res.user));
+    }
+    return res;
+  }, []);
+
   const isAuthenticated = Boolean(token && user);
   const isAdmin = user?.vaiTro === 'Admin';
 
@@ -95,6 +105,7 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     logout,
     updatePreferences,
+    updateProfile,
     reloadProfile: loadUserProfile,
   };
 

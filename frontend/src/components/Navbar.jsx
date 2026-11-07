@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PreferencesModal from './PreferencesModal';
+import ProfileModal from './ProfileModal';
 import {
   Sparkles,
   Heart,
@@ -14,11 +15,22 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 
+const resolveAvatarUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const backendBase = apiBase.replace(/\/api\/?$/, '');
+  return `${backendBase}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isPrefModalOpen, setIsPrefModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const location = useLocation();
@@ -190,7 +202,7 @@ const Navbar = () => {
                 >
                   {user?.avatarUrl ? (
                     <img
-                      src={user.avatarUrl}
+                      src={resolveAvatarUrl(user.avatarUrl)}
                       alt={user.hoTen}
                       className="w-8 h-8 rounded-full object-cover border border-white/40"
                     />
@@ -227,6 +239,18 @@ const Navbar = () => {
                     </div>
 
                     <div className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          setIsProfileModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-primary transition-colors text-left"
+                      >
+                        <UserIcon size={16} className="text-sky-600" />
+                        <span>Hồ sơ cá nhân</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => {
@@ -349,17 +373,30 @@ const Navbar = () => {
                 Lịch sử tìm kiếm
               </Link>
               {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setIsPrefModalOpen(true);
-                  }}
-                  className="text-left text-base font-semibold text-sky-600 flex items-center gap-2"
-                >
-                  <Sparkles size={16} />
-                  <span>Sở thích của tôi</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="text-left text-base font-semibold text-sky-600 flex items-center gap-2"
+                  >
+                    <UserIcon size={16} />
+                    <span>Hồ sơ cá nhân</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsPrefModalOpen(true);
+                    }}
+                    className="text-left text-base font-semibold text-sky-600 flex items-center gap-2"
+                  >
+                    <Sparkles size={16} />
+                    <span>Sở thích của tôi</span>
+                  </button>
+                </>
               )}
               {isAdmin && (
                 <Link
@@ -377,7 +414,11 @@ const Navbar = () => {
                 <>
                   <div className="flex items-center gap-3 py-2">
                     {user?.avatarUrl ? (
-                      <img src={user.avatarUrl} alt={user.hoTen} className="w-9 h-9 rounded-full object-cover" />
+                      <img
+                        src={resolveAvatarUrl(user.avatarUrl)}
+                        alt={user.hoTen}
+                        className="w-9 h-9 rounded-full object-cover"
+                      />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-sky-600 text-white flex items-center justify-center font-bold text-xs uppercase">
                         {user?.hoTen?.charAt(0) || 'U'}
@@ -421,6 +462,12 @@ const Navbar = () => {
           </div>
         )}
       </header>
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
 
       {/* Preferences Modal */}
       <PreferencesModal

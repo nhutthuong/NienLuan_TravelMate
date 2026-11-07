@@ -20,14 +20,45 @@ const findByGoogleId = async (googleId) => {
   return result.rows[0] || null;
 };
 
+let isMigrationChecked = false;
+const ensureNgaySinhColumn = async () => {
+  if (isMigrationChecked) return;
+  try {
+    await query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'nguoidung' AND column_name = 'ngaysinh'
+        ) THEN
+          ALTER TABLE NguoiDung ADD COLUMN NgaySinh DATE;
+        END IF;
+      END $$;
+    `);
+    isMigrationChecked = true;
+  } catch (_) {}
+};
+
 const findById = async (maNguoiDung) => {
+  await ensureNgaySinhColumn();
   const text = `
-    SELECT manguoidung, hoten, email, matkhau_hash, google_id, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at
+    SELECT manguoidung, hoten, email, matkhau_hash, google_id, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at,
+           TO_CHAR(ngaysinh, 'YYYY-MM-DD') AS ngaysinh
     FROM NguoiDung
     WHERE manguoidung = $1
   `;
-  const result = await query(text, [maNguoiDung]);
-  return result.rows[0] || null;
+  try {
+    const result = await query(text, [maNguoiDung]);
+    return result.rows[0] || null;
+  } catch (_err) {
+    const fallbackText = `
+      SELECT manguoidung, hoten, email, matkhau_hash, google_id, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at, NULL AS ngaysinh
+      FROM NguoiDung
+      WHERE manguoidung = $1
+    `;
+    const fallbackResult = await query(fallbackText, [maNguoiDung]);
+    return fallbackResult.rows[0] || null;
+  }
 };
 
 const createLocal = async ({ hoTen, email, matKhauHash }, maLoaiHinhList = []) => {
@@ -204,6 +235,75 @@ const getAdminStats = async () => {
   };
 };
 
+const updateProfile = async (maNguoiDung, { hoTen, avatarUrl, ngaySinh }) => {
+  await ensureNgaySinhColumn();
+  const fields = [];
+  const params = [];
+
+  if (hoTen !== undefined && hoTen.trim()) {
+    params.push(hoTen.trim());
+    fields.push(`hoten = $${params.length}`);
+  }
+
+  if (avatarUrl !== undefined) {
+    params.push(avatarUrl);
+    fields.push(`avatar_url = $${params.length}`);
+  }
+
+  if (ngaySinh !== undefined) {
+    params.push(ngaySinh && ngaySinh.trim() ? ngaySinh.trim() : null);
+    fields.push(`ngaysinh = $${params.length}`);
+  }
+
+  if (fields.length === 0) {
+    return findById(maNguoiDung);
+  }
+
+  params.push(maNguoiDung);
+  const text = `
+    UPDATE NguoiDung
+    SET ${fields.join(', ')}
+    WHERE manguoidung = $${params.length}
+    RETURNING manguoidung, hoten, email, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at,
+              TO_CHAR(ngaysinh, 'YYYY-MM-DD') AS ngaysinh
+  `;
+
+  try {
+    const result = await query(text, params);
+    return result.rows[0] || null;
+  } catch (_err) {
+    // Neu loi do ngaysinh chua ton tai tren DB, fallback khong cap nhat/select ngaysinh
+    const fallbackFields = fields.filter((f) => !f.startsWith('ngaysinh'));
+    if (fallbackFields.length === 0) {
+      return findById(maNguoiDung);
+    }
+    const fallbackParams = [];
+    if (hoTen !== undefined && hoTen.trim()) fallbackParams.push(hoTen.trim());
+    if (avatarUrl !== undefined) fallbackParams.push(avatarUrl);
+    fallbackParams.push(maNguoiDung);
+
+    const fallbackSql = `
+      UPDATE NguoiDung
+      SET ${fallbackFields.map((f, idx) => f.replace(/\$\d+/, `$${idx + 1}`)).join(', ')}
+      WHERE manguoidung = $${fallbackParams.length}
+      RETURNING manguoidung, hoten, email, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at, NULL AS ngaysinh
+    `;
+    const fallbackRes = await query(fallbackSql, fallbackParams);
+    return fallbackRes.rows[0] || null;
+  }
+};
+
+const updatePassword = async (maNguoiDung, newPasswordHash) => {
+  const text = `
+    UPDATE NguoiDung
+    SET matkhau_hash = $2
+    WHERE manguoidung = $1
+    RETURNING manguoidung, email
+  `;
+  const result = await query(text, [maNguoiDung, newPasswordHash]);
+  return result.rows[0] || null;
+};
+
 module.exports = {
   findByEmail,
   findByGoogleId,
@@ -216,5 +316,7 @@ module.exports = {
   getAllUsers,
   updateStatus,
   getAdminStats,
+  updateProfile,
+  updatePassword,
 };
 
