@@ -57,7 +57,7 @@ const ServiceModal = ({
               </label>
               <select
                 value={serviceForm.locationId}
-                onChange={(e) => setServiceForm({ ...serviceForm, locationId: Number(e.target.value) })}
+                onChange={(e) => setServiceForm({ ...serviceForm, locationId: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 {destinations.map(d => (

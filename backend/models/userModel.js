@@ -186,6 +186,13 @@ const getAdminStats = async () => {
   const scansRes = await query('SELECT COUNT(*)::INT AS total FROM LichSuTimKiem');
   const reviewsKsRes = await query("SELECT COUNT(*)::INT AS total FROM DanhGiaKhachSan WHERE trangthai = 'Flagged'");
   const reviewsDtqRes = await query("SELECT COUNT(*)::INT AS total FROM DanhGiaDiemTQ WHERE trangthai = 'Flagged'");
+  const locationScansRes = await query(`
+    SELECT d.madiadiem, d.ten, COUNT(ls.madiadiem)::INT AS count
+    FROM DiaDiem d
+    LEFT JOIN LichSuTimKiem ls ON d.madiadiem = ls.madiadiem
+    GROUP BY d.madiadiem, d.ten
+    ORDER BY count DESC, d.madiadiem ASC
+  `);
 
   return {
     totalUsers: usersRes.rows[0].total,
@@ -193,6 +200,7 @@ const getAdminStats = async () => {
     totalAttractions: attractionsRes.rows[0].total,
     totalScans: scansRes.rows[0].total,
     flaggedReviewsCount: reviewsKsRes.rows[0].total + reviewsDtqRes.rows[0].total,
+    locationScans: locationScansRes.rows,
   };
 };
 

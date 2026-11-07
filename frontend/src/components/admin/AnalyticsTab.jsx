@@ -1,15 +1,30 @@
 import React from 'react';
 
-const AnalyticsTab = () => {
-  const analyticsData = [
-    { name: 'Vịnh Hạ Long', percentage: 24, count: 356 },
-    { name: 'Tràng An (Ninh Bình)', percentage: 18, count: 267 },
-    { name: 'Phố Cổ Hội An', percentage: 16, count: 237 },
-    { name: 'Cầu Vàng (Đà Nẵng)', percentage: 14, count: 207 },
-    { name: 'Đỉnh Fansipan', percentage: 10, count: 148 },
-    { name: 'Phú Quốc', percentage: 8, count: 118 },
-    { name: 'Các địa danh khác (Cần Thơ, Hà Nội, Mũi Né, Đà Lạt)', percentage: 10, count: 149 }
-  ];
+const DEFAULT_ANALYTICS_DATA = [
+  { name: 'Vịnh Hạ Long', percentage: 24, count: 356 },
+  { name: 'Tràng An (Ninh Bình)', percentage: 18, count: 267 },
+  { name: 'Phố Cổ Hội An', percentage: 16, count: 237 },
+  { name: 'Cầu Vàng (Đà Nẵng)', percentage: 14, count: 207 },
+  { name: 'Đỉnh Fansipan', percentage: 10, count: 148 },
+  { name: 'Phú Quốc', percentage: 8, count: 118 },
+  { name: 'Các địa danh khác (Cần Thơ, Hà Nội, Mũi Né, Đà Lạt)', percentage: 10, count: 149 }
+];
+
+const AnalyticsTab = ({ stats = null }) => {
+  let analyticsData = DEFAULT_ANALYTICS_DATA;
+  let totalScansLabel = '1.482 lượt quét AI';
+
+  if (stats && Array.isArray(stats.locationScans) && stats.locationScans.length > 0 && stats.totalScans > 0) {
+    const totalScans = stats.totalScans;
+    totalScansLabel = `${new Intl.NumberFormat('vi-VN').format(totalScans)} lượt quét AI`;
+    analyticsData = stats.locationScans.map((item) => ({
+      name: item.ten,
+      count: item.count,
+      percentage: totalScans > 0 ? Math.round((item.count / totalScans) * 100) : 0,
+    }));
+  } else if (stats && typeof stats.totalScans === 'number') {
+    totalScansLabel = `${new Intl.NumberFormat('vi-VN').format(stats.totalScans || 1482)} lượt quét AI`;
+  }
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
@@ -23,7 +38,7 @@ const AnalyticsTab = () => {
           </p>
         </div>
         <span className="px-3 py-1 bg-sky-50 text-sky-700 border border-sky-100 text-xs font-bold rounded-full">
-          1.482 lượt quét AI
+          {totalScansLabel}
         </span>
       </div>
 
