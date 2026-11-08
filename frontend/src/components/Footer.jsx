@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 
 const Footer = () => {
@@ -30,10 +31,10 @@ const Footer = () => {
         <div>
           <h4 className="text-lg font-semibold text-white mb-6">Khám phá & Trải nghiệm</h4>
           <ul className="space-y-3">
-            <li><a href="#" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">10 Địa danh tiêu biểu Việt Nam</a></li>
-            <li><a href="#" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Quét ảnh nhận diện di tích</a></li>
-            <li><a href="#" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Khu nghỉ dưỡng & Khách sạn boutique</a></li>
-            <li><a href="#" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Bản đồ ẩm thực & Văn hóa địa phương</a></li>
+            <li><Link to="/explore?tab=destinations" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">10 Địa danh tiêu biểu Việt Nam</Link></li>
+            <li><Link to="/#ai-predict" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Quét ảnh nhận diện di tích</Link></li>
+            <li><Link to="/explore?tab=hotels" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Khu nghỉ dưỡng & Khách sạn boutique</Link></li>
+            <li><Link to="/explore" className="text-sm text-sky-100/90 hover:text-white hover:pl-1 transition-all">Bản đồ ẩm thực & Văn hóa địa phương</Link></li>
           </ul>
         </div>
 

@@ -23,6 +23,7 @@ function MainLayout() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/hotels" element={<Explore defaultTab="hotels" />} />
           <Route path="/location/:id" element={<LocationDetail />} />
           <Route path="/service/:type/:id" element={<ServiceDetail />} />
           <Route path="/wishlist" element={<Wishlist />} />

@@ -35,6 +35,10 @@ const Home = () => {
     );
   };
 
+  const handleSelectCategories = (catIds) => {
+    setSelectedCategories(catIds);
+  };
+
   const handleClearCategories = () => {
     setSelectedCategories([]);
   };
@@ -195,6 +199,7 @@ const Home = () => {
                 categories={categories}
                 selectedCategories={selectedCategories}
                 onToggleCategory={handleToggleCategory}
+                onSelectCategories={handleSelectCategories}
                 onClearCategories={handleClearCategories}
                 onSubmit={handleSearchByPreference}
               />

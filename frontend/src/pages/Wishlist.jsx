@@ -246,10 +246,12 @@ const Wishlist = () => {
 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
                   <div className="flex flex-col">
-                    <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded w-fit mb-1">
-                      <Star size={12} className="text-amber-500 fill-amber-500" />
-                      <span className="text-xs font-bold text-amber-700">{item.rating}</span>
-                    </div>
+                    {item.type !== 'location' && (
+                      <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded w-fit mb-1">
+                        <Star size={12} className="text-amber-500 fill-amber-500" />
+                        <span className="text-xs font-bold text-amber-700">{item.rating}</span>
+                      </div>
+                    )}
                     {item.price && (
                       <span className="text-blue-700 font-bold mt-1 text-lg">
                         {item.price}

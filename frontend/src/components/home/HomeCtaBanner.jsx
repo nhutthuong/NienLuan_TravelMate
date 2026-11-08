@@ -18,13 +18,13 @@ const HomeCtaBanner = () => {
         </div>
         <div className="flex gap-4 shrink-0">
           <Link
-            to="/explore"
+            to="/explore?tab=hotels"
             className="bg-white text-teal-700 px-6 py-3 rounded-xl font-semibold hover:bg-slate-50 hover:-translate-y-0.5 transition-all shadow-md text-center"
           >
             Khám phá danh sách Khách sạn
           </Link>
           <Link
-            to="/explore"
+            to="/explore?tab=destinations"
             className="bg-transparent border border-white/50 text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/10 transition-all text-center"
           >
             Xem 10 địa điểm
