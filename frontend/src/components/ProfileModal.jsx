@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Loader2,
   CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -133,6 +134,15 @@ const ProfileModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleRemoveAvatar = () => {
+    setAvatarUrl(null);
+    setAvatarPreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    showToast('Đã chọn gỡ ảnh đại diện. Bấm "Lưu thông tin hồ sơ" để hoàn tất.', 'info');
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
 
@@ -155,7 +165,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
       await updateProfile({
         hoTen: hoTen.trim(),
         ngaySinh: ngaySinh || null,
-        avatarUrl: avatarUrl || user?.avatarUrl || null,
+        avatarUrl: avatarUrl !== undefined ? (avatarUrl ? avatarUrl.trim() : null) : (user?.avatarUrl || null),
       });
 
       setIsProfileSaved(true);
@@ -396,15 +406,31 @@ const ProfileModal = ({ isOpen, onClose }) => {
                   <p className="text-xs text-slate-500">
                     Hỗ trợ định dạng JPG, PNG hoặc WebP. Kích thước tối đa 5MB.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingAvatar}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shadow-sm disabled:opacity-60"
-                  >
-                    <Camera size={14} className="text-slate-500" />
-                    <span>{isUploadingAvatar ? 'Đang tải lên...' : 'Tải ảnh mới'}</span>
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shadow-sm disabled:opacity-60 cursor-pointer"
+                    >
+                      <Camera size={14} className="text-slate-500" />
+                      <span>{isUploadingAvatar ? 'Đang tải lên...' : 'Tải ảnh mới'}</span>
+                    </button>
+
+                    {/* Gỡ ảnh đại diện khi người dùng không sử dụng avatar nữa */}
+                    {(avatarPreview || avatarUrl) && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={isUploadingAvatar || isSavingProfile}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors shadow-sm disabled:opacity-60 cursor-pointer"
+                        title="Không sử dụng ảnh đại diện nữa"
+                      >
+                        <Trash2 size={14} className="text-rose-500" />
+                        <span>Gỡ ảnh</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

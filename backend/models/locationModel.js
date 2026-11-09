@@ -137,7 +137,24 @@ const getById = async (maDiaDiem, currentUserId = null) => {
   };
 };
 
-const getRelatedLocations = async (maDiaDiem, limit = 4) => {
+const getMultipleByIds = async (ids = []) => {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const sql = `
+    SELECT madiadiem, ten, tinhthanh, danhhieu, anh_url
+    FROM DiaDiem
+    WHERE madiadiem = ANY($1)
+  `;
+  const res = await query(sql, [ids]);
+  return res.rows.map((row) => ({
+    maDiaDiem: row.madiadiem,
+    ten: row.ten,
+    tinhThanh: row.tinhthanh,
+    danhHieu: row.danhhieu,
+    anhUrl: row.anh_url,
+  }));
+};
+
+const getRelatedLocations = async (maDiaDiem, limit = 6) => {
   const sql = `
     SELECT 
       d.madiadiem,
@@ -358,6 +375,7 @@ const deleteActivity = async (maHoatDong) => {
 module.exports = {
   getAllLocations,
   getById,
+  getMultipleByIds,
   getRelatedLocations,
   getAllCategories,
   getAllAmenities,

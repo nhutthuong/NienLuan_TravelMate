@@ -38,11 +38,28 @@ const predict = async (req, res) => {
       }
     }
 
-    const [location, suggestedHotels, suggestedAttractions] = await Promise.all([
+    const topKIds = (aiResult.topK || []).map((k) => k.maDiaDiem).filter(Boolean);
+    const [location, suggestedHotels, suggestedAttractions, topKDetails] = await Promise.all([
       locationModel.getById(aiResult.maDiaDiem, currentUserId),
       hotelModel.getSuggestedHotels(aiResult.maDiaDiem, currentUserId, 6),
       attractionModel.getSuggestedAttractions(aiResult.maDiaDiem, currentUserId, 6),
+      locationModel.getMultipleByIds(topKIds),
     ]);
+
+    const detailsMap = new Map((topKDetails || []).map((d) => [d.maDiaDiem, d]));
+
+    const enrichedTopK = (aiResult.topK || []).map((k, idx) => {
+      const detail = detailsMap.get(k.maDiaDiem) || {};
+      return {
+        index: idx,
+        maDiaDiem: k.maDiaDiem,
+        ten: detail.ten || k.locationName,
+        tinhThanh: detail.tinhThanh || '',
+        danhHieu: detail.danhHieu || '',
+        anhUrl: detail.anhUrl || '',
+        confidence: k.confidence,
+      };
+    });
 
     return res.status(200).json({
       prediction: {
@@ -50,11 +67,7 @@ const predict = async (req, res) => {
         tenDiaDiem: aiResult.locationName,
         doTinCay: aiResult.confidence,
         lowConfidence: aiResult.lowConfidence,
-        topK: (aiResult.topK || []).map((k) => ({
-          maDiaDiem: k.maDiaDiem,
-          ten: k.locationName,
-          confidence: k.confidence,
-        })),
+        topK: enrichedTopK,
         anhTaiLenUrl,
       },
       location,

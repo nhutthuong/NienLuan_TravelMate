@@ -247,18 +247,24 @@ const AiPredictTab = ({
                   Xác suất dự đoán Top-3
                 </p>
                 <div className="space-y-2">
-                  {predictionResult.prediction.topK.map((k, idx) => (
+                  {(predictionResult.prediction?.topK || []).map((k, idx) => (
                     <div key={idx} className="space-y-1">
                       <div className="flex justify-between text-xs font-semibold">
-                        <span
-                          className={
+                        <Link
+                          to={`/location/${k.maDiaDiem}`}
+                          state={{
+                            fromAI: true,
+                            confidence: `${k.confidence}%`,
+                            topK: predictionResult.prediction?.topK || [],
+                          }}
+                          className={`hover:underline cursor-pointer ${
                             idx === 0
                               ? "text-primary font-bold"
-                              : "text-slate-600"
-                          }
+                              : "text-slate-600 hover:text-primary"
+                          }`}
                         >
                           #{idx + 1} {k.ten}
-                        </span>
+                        </Link>
                         <span
                           className={
                             idx === 0
@@ -293,6 +299,11 @@ const AiPredictTab = ({
                 </button>
                 <Link
                   to={`/location/${predictionResult.prediction.maDiaDiem}`}
+                  state={{
+                    fromAI: true,
+                    confidence: `${predictionResult.prediction.doTinCay}%`,
+                    topK: predictionResult.prediction?.topK || [],
+                  }}
                   className="btn-primary py-2.5 px-6 text-sm font-semibold inline-flex items-center gap-1.5 shadow-sm"
                 >
                   <span>Khám phá toàn bộ {predictionResult.prediction.tenDiaDiem}</span>

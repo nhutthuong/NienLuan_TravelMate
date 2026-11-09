@@ -17,7 +17,7 @@ const LocationRelated = ({
             Gợi ý cùng chủ đề
           </span>
           <h2 className="text-2xl font-bold text-gray-900 mt-1">
-            Điểm đến di sản tương đồng bạn sẽ thích
+            Điểm đến tương đồng bạn có thể thích
           </h2>
         </div>
         <Link
@@ -39,11 +39,23 @@ const LocationRelated = ({
               <img
                 src={sim.anhUrl || defaultImage}
                 alt={sim.ten}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = defaultImage;
+                }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 text-[11px] font-semibold rounded">
+              <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 text-[11px] font-semibold rounded max-w-[110px] truncate">
                 {sim.tinhThanh}
               </span>
+
+              {/* Huy hiệu dành riêng cho địa điểm từ Top 2, Top 3 nhận diện AI */}
+              {sim.isFromAiTopK && (
+                <span className="absolute bottom-2 right-2 bg-slate-900/85 backdrop-blur-md text-amber-300 border border-amber-300/40 px-2 py-0.5 text-[10px] font-bold rounded-lg flex items-center gap-1 shadow-sm">
+                  <Sparkles size={11} className="text-amber-300 shrink-0" />
+                  <span>Top {sim.topRank} AI ({sim.confidence}%)</span>
+                </span>
+              )}
             </div>
             <div className="p-3.5 flex-1 flex flex-col justify-between">
               <h4 className="font-bold text-gray-800 group-hover:text-sky-700 transition-colors line-clamp-1">

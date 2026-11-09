@@ -68,7 +68,7 @@ const Explore = ({ defaultTab = 'destinations' }) => {
           setHotels(data);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (isMounted) setLoadingHotels(false);
       });
@@ -91,20 +91,8 @@ const Explore = ({ defaultTab = 'destinations' }) => {
 
   return (
     <div className="flex-1 flex flex-col bg-slate-50 font-sans">
-      <div className="flex-1 pt-28 pb-16">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          {/* Header Title */}
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-extrabold text-slate-900 mb-3 tracking-tight">
-              {activeTab === 'hotels' ? 'Khám Phá Khu Nghỉ Dưỡng & Khách Sạn' : 'Khám Phá Điểm Đến Tuyệt Vời'}
-            </h1>
-            <p className="text-slate-500 max-w-2xl mx-auto text-base sm:text-lg">
-              {activeTab === 'hotels'
-                ? 'Tuyển tập khách sạn, resort và không gian lưu trú cao cấp tại các thiên đường du lịch Việt Nam.'
-                : 'Bộ lọc giúp bạn tìm kiếm và lựa chọn những địa điểm du lịch phù hợp với sở thích cá nhân của bạn.'}
-            </p>
-          </div>
-
+      <div className="flex-1 pt-24 sm:pt-28 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Main Tab Switcher */}
           <ExploreTabs
             activeTab={activeTab}
@@ -124,7 +112,7 @@ const Explore = ({ defaultTab = 'destinations' }) => {
             />
           )}
 
-          {/* Tab 2: Khu nghỉ dưỡng & Khách sạn */}
+          {/* Tab 2: Khu nghỉ dưỡng và Khách sạn */}
           {activeTab === 'hotels' && (
             <HotelsView
               hotels={hotels}

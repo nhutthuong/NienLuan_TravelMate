@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Explore from './pages/Explore';
@@ -39,11 +39,7 @@ function MainLayout() {
 }
 
 function App() {
-  return (
-    <Router>
-      <MainLayout />
-    </Router>
-  );
+  return <MainLayout />;
 }
 
 export default App;

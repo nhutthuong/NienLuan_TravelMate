@@ -11,6 +11,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const { cleanupUnusedAvatars } = require('./utils/avatarStorage');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,6 +45,9 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Backend server is running on port ${PORT}`);
+    cleanupUnusedAvatars().catch((err) => {
+      console.error('[Avatar Cleanup] Loi khi khoi dong:', err.message);
+    });
   });
 }
 

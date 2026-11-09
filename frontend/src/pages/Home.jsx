@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UploadCloud, Search } from "lucide-react";
-import { api } from "../services/api";
+import api from "../services/api";
 import Footer from "../components/Footer";
 import { ORIGINAL_DESTINATIONS } from "../components/home/homeConstants";
 import AiPredictTab from "../components/home/AiPredictTab";

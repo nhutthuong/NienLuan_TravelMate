@@ -184,7 +184,45 @@ const LocationDetail = () => {
 
   const spotsList = location.attractions || [];
   const hotelsList = location.hotels || [];
-  const relatedList = location.relatedLocations || [];
+  const rawRelatedList = location.relatedLocations || [];
+
+  // Logic hiển thị địa điểm liên quan:
+  // - Nếu đến từ nhận diện AI (isFromAI): hiển thị 2 địa điểm còn lại trong Top 2, Top 3 + 2 địa điểm tương đồng chủ đề
+  // - Nếu xem trực tiếp (không tải ảnh nhận diện): hiển thị 4 địa điểm tương đồng chủ đề
+  const aiTopK = Array.isArray(locationState.state?.topK) ? locationState.state.topK : [];
+  const currentId = resolveLocationId(id);
+
+  let displayRelatedLocations = [];
+  if (isFromAI && aiTopK.length > 1) {
+    // 1. Lấy 2 địa điểm còn lại trong Top 2 và Top 3 dự đoán của mô hình AI (khác địa điểm hiện tại)
+    const otherAiLocations = aiTopK
+      .filter((k) => k.maDiaDiem !== currentId)
+      .slice(0, 2)
+      .map((k, idx) => ({
+        maDiaDiem: k.maDiaDiem,
+        ten: k.ten || k.locationName,
+        tinhThanh: k.tinhThanh || 'Việt Nam',
+        danhHieu: k.danhHieu || `Độ tin cậy AI: ${k.confidence}%`,
+        anhUrl: k.anhUrl || '/images/vinh_ha_long.jpg',
+        isFromAiTopK: true,
+        topRank: idx + 2,
+        confidence: k.confidence,
+      }));
+
+    // Tập hợp các ID đã có (địa điểm hiện tại + 2 địa điểm Top 2, Top 3)
+    const usedIds = new Set(otherAiLocations.map((item) => item.maDiaDiem));
+    usedIds.add(currentId);
+
+    // 2. Lấy thêm 2 địa điểm theo mức độ tương đồng chủ đề (không trùng với Top 2, Top 3)
+    const remainingSimilar = rawRelatedList
+      .filter((r) => !usedIds.has(r.maDiaDiem))
+      .slice(0, 2);
+
+    displayRelatedLocations = [...otherAiLocations, ...remainingSimilar];
+  } else {
+    // Nếu chọn xem trực tiếp: render 4 địa điểm theo mức độ tương đồng
+    displayRelatedLocations = rawRelatedList.slice(0, 4);
+  }
 
   const filteredSpots = spotsList.filter(
     (s) =>
@@ -247,7 +285,7 @@ const LocationDetail = () => {
             />
 
             <LocationRelated
-              relatedLocations={relatedList}
+              relatedLocations={displayRelatedLocations}
               defaultImage={location.anhUrl}
             />
           </div>

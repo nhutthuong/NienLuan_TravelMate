@@ -34,7 +34,7 @@ const getLocationDetail = async (req, res) => {
     const [attractions, hotels, relatedLocations] = await Promise.all([
       attractionModel.getSuggestedAttractions(id, currentUserId, 6),
       hotelModel.getSuggestedHotels(id, currentUserId, 6),
-      locationModel.getRelatedLocations(id, 4),
+      locationModel.getRelatedLocations(id, 6),
     ]);
 
     return res.status(200).json({

@@ -126,48 +126,50 @@ const HotelsView = ({
   return (
     <>
       {/* Hotel Filter & Search Bar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 space-y-4">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/90 p-5 sm:p-6 mb-6 space-y-4">
         <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
           <div className="relative w-full lg:w-96 shrink-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
             <input
               type="text"
               placeholder="Tìm theo tên khách sạn, địa chỉ, tiện ích..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10 outline-none transition-all text-sm"
+              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 focus:bg-white focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10 outline-none transition-all text-sm sm:text-base placeholder:text-slate-400"
               value={hotelSearch}
               onChange={(e) => setHotelSearch(e.target.value)}
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-3.5 w-full lg:w-auto justify-end">
             {/* Preference filter button */}
             {isAuthenticated && userPreferences.length > 0 && (
               <button
                 type="button"
                 onClick={() => setOnlyMyPreferences(!onlyMyPreferences)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center gap-2.5 cursor-pointer select-none ${
                   onlyMyPreferences
                     ? 'bg-gradient-to-r from-teal-700 to-emerald-700 text-white shadow-teal-700/20'
                     : 'bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100'
                 }`}
               >
-                <Sparkles size={14} className={onlyMyPreferences ? 'text-amber-300' : 'text-teal-700'} />
+                <Sparkles size={16} className={onlyMyPreferences ? 'text-amber-300' : 'text-teal-700'} />
                 <span>Ưu tiên theo sở thích của tôi</span>
               </button>
             )}
 
             {/* Star Filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Hạng sao:</span>
+              <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider hidden sm:inline mr-1">
+                Hạng sao:
+              </span>
               {['Tất cả', '5 sao', '4 sao trở lên'].map((starOpt) => (
                 <button
                   key={starOpt}
                   type="button"
                   onClick={() => setSelectedStar(starOpt)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none ${
                     selectedStar === starOpt
-                      ? 'bg-amber-500 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/20'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
                 >
                   {starOpt}
@@ -176,12 +178,12 @@ const HotelsView = ({
             </div>
 
             {/* Sort Selector */}
-            <div className="relative flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-700">
-              <ArrowUpDown size={14} className="text-slate-400" />
+            <div className="relative flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium text-slate-700 shadow-xs">
+              <ArrowUpDown size={16} className="text-slate-400 shrink-0" />
               <select
                 value={hotelSort}
                 onChange={(e) => setHotelSort(e.target.value)}
-                className="bg-transparent outline-none cursor-pointer pr-1"
+                className="bg-transparent outline-none cursor-pointer pr-1 text-xs sm:text-sm font-semibold text-slate-700"
               >
                 <option value="recommended">
                   {isAuthenticated && userPreferences.length > 0 ? 'Ưu tiên theo sở thích của bạn' : 'Gợi ý phù hợp nhất'}
@@ -196,17 +198,19 @@ const HotelsView = ({
 
         {/* Dynamic Location Filter Pills */}
         {locationOptions.length > 1 && (
-          <div className="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Địa danh:</span>
+          <div className="pt-3.5 border-t border-slate-100 flex items-center gap-2.5 overflow-x-auto scrollbar-thin">
+            <span className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
+              Địa danh:
+            </span>
             {locationOptions.map((loc) => (
               <button
                 key={loc}
                 type="button"
                 onClick={() => setSelectedLocation(loc)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer shadow-xs select-none ${
                   selectedLocation === loc
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-teal-700 text-white shadow-sm shadow-teal-700/25'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
                 {loc}

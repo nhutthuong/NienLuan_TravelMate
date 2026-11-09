@@ -151,33 +151,33 @@ const DestinationsView = ({
   return (
     <>
       {/* Search & Multi-select Category Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full lg:w-80 shrink-0">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/90 p-5 mb-5 flex flex-col lg:flex-row gap-4 items-center justify-between">
+        <div className="relative w-full lg:w-96 shrink-0">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={22} />
           <input
             type="text"
             placeholder="Tìm kiếm địa danh, tỉnh thành..."
-            className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+            className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm sm:text-base placeholder:text-slate-400"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-thin">
-          <Filter size={18} className="text-slate-400 mx-1 shrink-0 hidden md:block" />
+        <div className="flex items-center gap-3 overflow-x-auto w-full pb-2 lg:pb-0 scrollbar-thin">
+          <Filter size={20} className="text-slate-400 mx-1 shrink-0 hidden md:block" />
 
           {/* Personalized Filter Button for Logged-in Members */}
           {isAuthenticated && userPreferences.length > 0 && (
             <button
               type="button"
               onClick={handleToggleUserPreferences}
-              className={`px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 select-none ${
+              className={`px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-2.5 shrink-0 select-none shadow-xs ${
                 areAllPrefsSelected || onlyMyPreferences
                   ? 'bg-gradient-to-r from-sky-600 to-teal-600 text-white shadow-md shadow-sky-600/30'
                   : 'bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100'
               }`}
             >
-              <Sparkles size={15} className={areAllPrefsSelected || onlyMyPreferences ? 'text-amber-300' : 'text-sky-600'} />
+              <Sparkles size={16} className={areAllPrefsSelected || onlyMyPreferences ? 'text-amber-300' : 'text-sky-600'} />
               <span>Ưu tiên theo sở thích của tôi</span>
             </button>
           )}
@@ -186,10 +186,10 @@ const DestinationsView = ({
           <button
             type="button"
             onClick={handleSelectAll}
-            className={`px-3.5 sm:px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 select-none ${
+            className={`px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 select-none shadow-xs ${
               selectedCategories.length === 0 && !onlyMyPreferences
                 ? 'bg-primary text-white shadow-md shadow-primary/30'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <span>Tất cả</span>
@@ -211,7 +211,7 @@ const DestinationsView = ({
                 key={catId || catName}
                 type="button"
                 onClick={() => handleToggleCategory(catName)}
-                className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-2 border select-none shrink-0 group ${
+                className={`px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-2.5 border select-none shrink-0 group shadow-xs ${
                   isSelected
                     ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
                     : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
@@ -219,14 +219,14 @@ const DestinationsView = ({
               >
                 {/* Visual Checkbox Square */}
                 <span
-                  className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all ${
+                  className={`w-[18px] h-[18px] rounded-[5px] flex items-center justify-center transition-all ${
                     isSelected
                       ? 'bg-white text-primary shadow-xs'
                       : 'bg-slate-50 border border-slate-300 text-transparent group-hover:border-slate-400'
                   }`}
                 >
                   <Check
-                    size={11}
+                    size={12}
                     className={`stroke-[3.5] transition-transform ${
                       isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
                     }`}
@@ -255,10 +255,10 @@ const DestinationsView = ({
             <button
               type="button"
               onClick={handleSelectAll}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 ml-1"
+              className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 hover:border-rose-300 whitespace-nowrap transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 ml-1 select-none"
               title="Bỏ chọn tất cả loại hình"
             >
-              <X size={14} />
+              <X size={15} />
               <span>Xóa ({selectedCategories.length})</span>
             </button>
           )}

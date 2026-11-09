@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const userModel = require('../models/userModel');
 const googleAuthService = require('../services/googleAuthService');
+const { deleteAvatarFile, cleanupUnusedAvatars } = require('../utils/avatarStorage');
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -239,15 +240,41 @@ const updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'Họ tên không được để trống' });
     }
 
+    // Lấy thông tin người dùng hiện tại trước khi cập nhật
+    const currentUser = await userModel.findById(maNguoiDung);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+    }
+    const oldAvatarUrl = currentUser.avatar_url;
+
+    // Chuẩn hóa avatarUrl: nếu rỗng thì chuyển thành null
+    const normalizedAvatarUrl =
+      avatarUrl !== undefined
+        ? avatarUrl && String(avatarUrl).trim()
+          ? String(avatarUrl).trim()
+          : null
+        : undefined;
+
     const updatedUser = await userModel.updateProfile(maNguoiDung, {
       hoTen,
-      avatarUrl,
+      avatarUrl: normalizedAvatarUrl,
       ngaySinh,
     });
 
     if (!updatedUser) {
-      return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+      return res.status(404).json({ message: 'Không thể cập nhật hồ sơ người dùng' });
     }
+
+    // Nếu người dùng đổi avatar hoặc gỡ bỏ avatar (không sử dụng nữa):
+    // Xóa file avatar cũ khỏi thư mục uploads/avatars để không tốn dung lượng
+    if (normalizedAvatarUrl !== undefined && normalizedAvatarUrl !== oldAvatarUrl && oldAvatarUrl) {
+      await deleteAvatarFile(oldAvatarUrl);
+    }
+
+    // Dọn dẹp bất kỳ avatar rác nào không còn ai sử dụng trong hệ thống
+    cleanupUnusedAvatars().catch((err) => {
+      console.error('[Avatar Cleanup] Lỗi quét dọn tự động:', err.message);
+    });
 
     const prefs = await userModel.getPreferences(maNguoiDung);
 

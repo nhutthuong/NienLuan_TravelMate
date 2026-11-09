@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -35,20 +34,20 @@ class ErrorBoundary extends React.Component {
             )}
             <div className="flex gap-3 justify-center">
               <button
+                type="button"
                 onClick={() => window.location.reload()}
                 className="btn-primary text-xs py-2.5 px-5 flex items-center gap-1.5"
               >
                 <RefreshCw size={14} />
                 <span>Tải lại trang</span>
               </button>
-              <Link
-                to="/"
-                onClick={() => this.setState({ hasError: false, error: null })}
+              <a
+                href="/"
                 className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs flex items-center gap-1.5 transition-colors"
               >
                 <Home size={14} />
                 <span>Trang chủ</span>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
