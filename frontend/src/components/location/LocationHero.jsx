@@ -53,7 +53,7 @@ const LocationHero = ({
               isFavorited ? 'fill-rose-500 text-rose-500' : 'text-gray-600'
             }`}
           />
-          <span>{isFavorited ? 'Đã lưu Wishlist' : 'Lưu vào Wishlist'}</span>
+          <span>{isFavorited ? 'Đã lưu vào yêu thích' : 'Lưu vào yêu thích'}</span>
         </button>
 
         <button

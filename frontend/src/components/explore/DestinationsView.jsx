@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Filter, Loader2, Sparkles, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -32,12 +32,97 @@ const DestinationsView = ({
     if (!userPreferences.length) return [];
     return categories
       .filter((c) => {
-        const cId = c.maLoaiHinh || c.id || c.ten;
-        const cName = c.ten || c.name || c;
-        return userPreferences.includes(cId) || userPreferences.includes(cName);
+        const cId = String(c.maLoaiHinh || c.id || '').trim().toLowerCase();
+        const cName = String(c.ten || c.name || c || '').trim().toLowerCase();
+        return userPreferences.some((p) => {
+          const pStr = String(p).trim().toLowerCase();
+          return pStr === cId || pStr === cName;
+        });
       })
       .map((c) => c.ten || c.name || c);
   }, [categories, userPreferences]);
+
+  // Compute matched preferences dynamically based on live userPreferences and categories
+  const getMatchedPreferences = useCallback(
+    (dest) => {
+      if (!isAuthenticated || !userPreferences || userPreferences.length === 0) {
+        return [];
+      }
+
+      const dNames = Array.isArray(dest.loaiHinh)
+        ? dest.loaiHinh
+        : Array.isArray(dest.loai_hinh)
+        ? dest.loai_hinh
+        : [dest.category || ''];
+
+      const dIds = Array.isArray(dest.maLoaiHinh)
+        ? dest.maLoaiHinh
+        : Array.isArray(dest.ma_loai_hinh)
+        ? dest.ma_loai_hinh
+        : [];
+
+      const matched = [];
+
+      // 1. Direct match by ID and Name pairs
+      dIds.forEach((id, idx) => {
+        const name = dNames[idx] || id;
+        const isMatched = userPreferences.some((p) => {
+          const pStr = String(p).trim().toLowerCase();
+          return pStr === String(id).trim().toLowerCase() || pStr === String(name).trim().toLowerCase();
+        });
+        if (isMatched && !matched.includes(name)) {
+          matched.push(name);
+        }
+      });
+
+      // 2. Direct match by category names
+      dNames.forEach((name) => {
+        const isMatched = userPreferences.some((p) => {
+          const pStr = String(p).trim().toLowerCase();
+          return pStr === String(name).trim().toLowerCase();
+        });
+        if (isMatched && !matched.includes(name)) {
+          matched.push(name);
+        }
+      });
+
+      // 3. Match via categories lookup table
+      if (Array.isArray(categories) && categories.length > 0) {
+        categories.forEach((cat) => {
+          const cId = String(cat.maLoaiHinh || cat.id || '').trim().toLowerCase();
+          const cName = String(cat.ten || cat.name || cat || '').trim().toLowerCase();
+          const displayName = cat.ten || cat.name || cat;
+
+          const isUserPref = userPreferences.some((p) => {
+            const pStr = String(p).trim().toLowerCase();
+            return pStr === cId || pStr === cName;
+          });
+
+          const isDest =
+            dIds.some((id) => String(id).trim().toLowerCase() === cId) ||
+            dNames.some((n) => String(n).trim().toLowerCase() === cName);
+
+          if (isUserPref && isDest && !matched.includes(displayName)) {
+            matched.push(displayName);
+          }
+        });
+      }
+
+      // 4. Fallback to backend matchedLoaiHinh if dynamic matched is empty
+      if (matched.length === 0) {
+        const backendMatched =
+          Array.isArray(dest.matchedLoaiHinh) && dest.matchedLoaiHinh.length > 0
+            ? dest.matchedLoaiHinh
+            : Array.isArray(dest.matched_loai_hinh) && dest.matched_loai_hinh.length > 0
+            ? dest.matched_loai_hinh
+            : [];
+        return backendMatched;
+      }
+
+      return matched;
+    },
+    [isAuthenticated, userPreferences, categories]
+  );
 
   const areAllPrefsSelected = useMemo(() => {
     if (userPrefCategoryNames.length === 0) return false;
@@ -102,7 +187,10 @@ const DestinationsView = ({
         if (onlyMyPreferences && selectedCategories.length === 0) {
           const matchUserPref =
             (dest.matchScore || 0) > 0 ||
-            destCategoryIds.some((cid) => userPreferences.includes(cid));
+            getMatchedPreferences(dest).length > 0 ||
+            destCategoryIds.some((cid) =>
+              userPreferences.some((p) => String(p).toLowerCase() === String(cid).toLowerCase())
+            );
           if (!matchUserPref) return false;
         }
 
@@ -139,14 +227,16 @@ const DestinationsView = ({
         }
 
         // 2. Naturally prioritize destinations matching user preferences
-        const scoreA = a.matchScore || a.match_score || 0;
-        const scoreB = b.matchScore || b.match_score || 0;
+        const matchCountA = getMatchedPreferences(a).length;
+        const matchCountB = getMatchedPreferences(b).length;
+        const scoreA = (a.matchScore || a.match_score || 0) + matchCountA * 10;
+        const scoreB = (b.matchScore || b.match_score || 0) + matchCountB * 10;
         if (scoreA !== scoreB) return scoreB - scoreA;
 
         // 3. Alphabetical order
         return (a.ten || a.name || '').localeCompare(b.ten || b.name || '');
       });
-  }, [destinations, searchQuery, selectedCategories, onlyMyPreferences, userPreferences]);
+  }, [destinations, searchQuery, selectedCategories, onlyMyPreferences, userPreferences, getMatchedPreferences]);
 
   return (
     <>
@@ -323,7 +413,7 @@ const DestinationsView = ({
               ? dest.loai_hinh
               : (dest.category ? [dest.category] : ['Khám phá']);
             const desc = dest.moTa || dest.mota || dest.desc || '';
-            const matchedList = dest.matchedLoaiHinh || dest.matched_loai_hinh || [];
+            const matchedList = getMatchedPreferences(dest);
 
             // Display up to 2 categories as chips, show +N tooltip for remaining
             const visibleCategories = categoriesList.slice(0, 2);
@@ -350,10 +440,10 @@ const DestinationsView = ({
                   {/* Personalized match badge on image overlay */}
                   {matchedList.length > 0 && (
                     <div className="absolute bottom-3 left-3 right-3 z-10">
-                      <div className="bg-slate-900/85 backdrop-blur-md text-amber-300 px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 shadow-sm border border-amber-300/30">
-                        <Sparkles size={13} className="text-amber-400 shrink-0" />
+                      <div className="bg-slate-900/90 backdrop-blur-md text-amber-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md border border-amber-300/40">
+                        <Sparkles size={14} className="text-amber-400 shrink-0" />
                         <span className="truncate">
-                          Khớp sở thích: {matchedList.join(', ')}
+                          Khớp với sở thích: {matchedList.join(', ')}
                         </span>
                       </div>
                     </div>

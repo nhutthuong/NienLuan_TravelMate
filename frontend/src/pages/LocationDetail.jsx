@@ -25,6 +25,7 @@ const LocationDetail = () => {
   const aiConfidence = locationState.state?.confidence || '99.4%';
 
   const [location, setLocation] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -33,7 +34,6 @@ const LocationDetail = () => {
   const [showMapPopup, setShowMapPopup] = useState(false);
   const [showAllModal, setShowAllModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'spots', 'hotels'
-  const [modalSearch, setModalSearch] = useState('');
 
   // Resolve ID format (supports DD0001-DD0010 or numeric 1-10)
   const resolveLocationId = useCallback((rawId) => {
@@ -51,8 +51,12 @@ const LocationDetail = () => {
       setLoading(true);
       setError(null);
       const targetId = resolveLocationId(id);
-      const data = await api.locations.getById(targetId);
+      const [data, cats] = await Promise.all([
+        api.locations.getById(targetId),
+        api.locations.getCategories().catch(() => []),
+      ]);
       setLocation(data);
+      setCategories(cats || []);
       setIsFavorited(Boolean(data.isFavorited));
     } catch (err) {
       console.error('Loi khi tai thong tin dia diem:', err.message);
@@ -224,20 +228,6 @@ const LocationDetail = () => {
     displayRelatedLocations = rawRelatedList.slice(0, 4);
   }
 
-  const filteredSpots = spotsList.filter(
-    (s) =>
-      !modalSearch ||
-      s.ten.toLowerCase().includes(modalSearch.toLowerCase()) ||
-      (s.diemNoiBat && s.diemNoiBat.toLowerCase().includes(modalSearch.toLowerCase()))
-  );
-
-  const filteredHotels = hotelsList.filter(
-    (h) =>
-      !modalSearch ||
-      h.ten.toLowerCase().includes(modalSearch.toLowerCase()) ||
-      (h.diaChi && h.diaChi.toLowerCase().includes(modalSearch.toLowerCase()))
-  );
-
   return (
     <div className="flex-1 flex flex-col bg-slate-50 justify-between">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-14 text-gray-800 font-sans flex-1">
@@ -298,6 +288,10 @@ const LocationDetail = () => {
               setActiveTab('hotels');
               setShowAllModal(true);
             }}
+            onOpenAttractionsModal={() => {
+              setActiveTab('spots');
+              setShowAllModal(true);
+            }}
           />
         </div>
 
@@ -316,14 +310,12 @@ const LocationDetail = () => {
             defaultImage={location.anhUrl}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            searchKeyword={modalSearch}
-            setSearchKeyword={setModalSearch}
-            filteredSpots={filteredSpots}
-            filteredHotels={filteredHotels}
-            spotsCount={spotsList.length}
-            hotelsCount={hotelsList.length}
+            spots={spotsList}
+            hotels={hotelsList}
+            categories={categories}
             onClose={() => setShowAllModal(false)}
             onNavigate={(path) => navigate(path)}
+            onSubItemWishlist={handleSubItemWishlist}
             formatCurrency={formatCurrency}
           />
         )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, ChevronRight, Clock, Heart, Star } from 'lucide-react';
+import { Camera, ChevronRight, Clock, Heart, Star, Ticket } from 'lucide-react';
 
 const LocationAttractions = ({
   attractions = [],
@@ -17,7 +17,7 @@ const LocationAttractions = ({
             Hành trình khám phá
           </span>
           <h2 className="text-2xl font-bold text-gray-900 mt-1">
-            Điểm tham quan & Check-in tiêu biểu
+            Điểm tham quan &amp; Check-in tiêu biểu
           </h2>
         </div>
         {attractions.length > 0 && (
@@ -78,14 +78,31 @@ const LocationAttractions = ({
                     {spot.diemNoiBat || spot.moTa || 'Điểm check-in nổi bật không thể bỏ qua.'}
                   </p>
                 </div>
-                <div className="pt-3 border-t border-slate-100 text-xs text-gray-500 flex justify-between items-center">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    {spot.gioMoCua || 'Mở cửa cả ngày'}
-                  </span>
-                  <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                    {spot.giaVe || 'Miễn phí'}
-                  </span>
+
+                {/* Structured Hours & Ticket Info without awkward line wrapping */}
+                <div className="pt-3 border-t border-slate-100 text-xs space-y-2 mt-auto">
+                  <div className="flex items-center justify-between text-slate-600 gap-2">
+                    <span className="flex items-center gap-1.5 shrink-0 text-slate-500">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Giờ mở cửa</span>
+                    </span>
+                    <span className="font-semibold text-slate-800 whitespace-nowrap">
+                      {spot.gioMoCua || 'Mở cửa cả ngày'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 shrink-0 text-slate-500">
+                      <Ticket className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Vé tham quan</span>
+                    </span>
+                    <span
+                      className="font-bold text-emerald-700 bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-0.5 rounded-lg text-right truncate max-w-[62%]"
+                      title={spot.giaVe || 'Miễn phí'}
+                    >
+                      {spot.giaVe || 'Miễn phí'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

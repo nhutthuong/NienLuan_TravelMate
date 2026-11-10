@@ -136,12 +136,25 @@ const LocationHotels = ({
                       {hotel.donViTinh || '/đêm'}
                     </span>
                   </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto">
                     <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigateHotel(hotel.maKhachSan);
+                      }}
+                      className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-200 hover:border-emerald-600 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span>Xem chi tiết</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={(e) =>
                         onBookingRedirect(e, hotel.bookingUrl, hotel.maKhachSan)
                       }
-                      className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm flex items-center justify-center gap-1.5"
+                      className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span>Đặt phòng</span>
                       <ExternalLink className="w-4 h-4" />

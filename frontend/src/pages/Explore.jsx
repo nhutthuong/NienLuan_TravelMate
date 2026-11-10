@@ -2,12 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Footer from '../components/Footer';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import ExploreTabs from '../components/explore/ExploreTabs';
 import DestinationsView from '../components/explore/DestinationsView';
 import HotelsView from '../components/explore/HotelsView';
 
 const Explore = ({ defaultTab = 'destinations' }) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const tabParam = searchParams.get('tab');
   const activeTab = tabParam === 'hotels' ? 'hotels' : (tabParam === 'destinations' ? 'destinations' : defaultTab);
@@ -29,6 +31,9 @@ const Explore = ({ defaultTab = 'destinations' }) => {
     nextParams.set('tab', newTab);
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
+
+  // Key to trigger re-fetch when user auth or user preferences change
+  const userKey = user ? `${user.maNguoiDung}_${(user.soThich || []).join(',')}` : 'guest';
 
   // Load destinations & categories from Backend Database
   useEffect(() => {
@@ -53,7 +58,7 @@ const Explore = ({ defaultTab = 'destinations' }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userKey]);
 
   // Load hotels from Backend Database
   useEffect(() => {
@@ -76,7 +81,7 @@ const Explore = ({ defaultTab = 'destinations' }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userKey]);
 
   // Update hotel wishlist state locally
   const handleHotelWishlistChange = useCallback((hotelId, isFavorited) => {
@@ -116,6 +121,7 @@ const Explore = ({ defaultTab = 'destinations' }) => {
           {activeTab === 'hotels' && (
             <HotelsView
               hotels={hotels}
+              categories={categories}
               loading={loadingHotels}
               onHotelWishlistChange={handleHotelWishlistChange}
             />
