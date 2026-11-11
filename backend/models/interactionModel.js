@@ -4,47 +4,104 @@ const { query } = require('../config/db');
 
 const getWishlist = async (maNguoiDung) => {
   const locationsSql = `
-    SELECT y.mayeuthich, d.madiadiem, d.ten, d.tinhthanh, d.danhhieu, d.anh_url, y.created_at
+    SELECT 
+      y.mayeuthich, 
+      d.madiadiem, 
+      d.ten, 
+      d.tinhthanh, 
+      d.danhhieu, 
+      d.mota,
+      d.anh_url, 
+      COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
+      y.created_at
     FROM YeuThich y
     JOIN DiaDiem d ON y.madiadiem = d.madiadiem
+    LEFT JOIN DiaDiem_LoaiHinh dl ON d.madiadiem = dl.madiadiem
+    LEFT JOIN LoaiHinhDuLich lh ON dl.maloaihinh = lh.maloaihinh
     WHERE y.manguoidung = $1
+    GROUP BY y.mayeuthich, d.madiadiem, d.ten, d.tinhthanh, d.danhhieu, d.mota, d.anh_url, y.created_at
     ORDER BY y.created_at DESC
   `;
   const attractionsSql = `
     SELECT 
       y.mayeuthich, 
       tq.madiemtq, 
+      tq.madiadiem,
       tq.ten, 
       tq.diachi, 
+      tq.mota,
+      tq.diemnoibat,
+      tq.giave,
+      tq.giomocua,
       d.ten AS ten_dia_diem,
+      d.tinhthanh,
       COALESCE(
         (SELECT media_url FROM MediaDiemThamQuan WHERE madiemtq = tq.madiemtq AND media_type = 'image' ORDER BY thutu ASC LIMIT 1),
         '/images/cau_vang.jpg'
       ) AS anh_dai_dien,
+      COALESCE(
+        (SELECT ROUND(AVG(danhgia), 1) FROM DanhGiaDiemTQ WHERE madiemtq = tq.madiemtq AND trangthai = 'Approved'),
+        5.0
+      ) AS diem_danh_gia,
+      COALESCE(
+        (SELECT COUNT(*)::INT FROM DanhGiaDiemTQ WHERE madiemtq = tq.madiemtq AND trangthai = 'Approved'),
+        0
+      ) AS so_danh_gia,
+      COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
       y.created_at
     FROM YeuThich y
     JOIN DiemThamQuan tq ON y.madiemtq = tq.madiemtq
     JOIN DiaDiem d ON tq.madiadiem = d.madiadiem
+    LEFT JOIN DiemThamQuan_LoaiHinh tl ON tq.madiemtq = tl.madiemtq
+    LEFT JOIN LoaiHinhDuLich lh ON tl.maloaihinh = lh.maloaihinh
     WHERE y.manguoidung = $1
+    GROUP BY y.mayeuthich, tq.madiemtq, tq.madiemtq, tq.madiadiem, tq.ten, tq.diachi, tq.mota, tq.diemnoibat, tq.giave, tq.giomocua, d.ten, d.tinhthanh, y.created_at
     ORDER BY y.created_at DESC
   `;
   const hotelsSql = `
     SELECT 
       y.mayeuthich, 
       ks.makhachsan, 
+      ks.madiadiem,
       ks.ten, 
       ks.sosao, 
+      ks.diachi,
+      ks.mota,
       ks.giathamkhao,
+      ks.diemnoibat,
+      ks.donvitinh,
+      ks.booking_url,
       d.ten AS ten_dia_diem,
+      d.tinhthanh,
       COALESCE(
         (SELECT media_url FROM MediaKhachSan WHERE makhachsan = ks.makhachsan AND media_type = 'image' ORDER BY thutu ASC LIMIT 1),
         '/images/vinh_ha_long.jpg'
       ) AS anh_dai_dien,
+      COALESCE(
+        (SELECT ROUND(AVG(danhgia), 1) FROM DanhGiaKhachSan WHERE makhachsan = ks.makhachsan AND trangthai = 'Approved'),
+        ks.sosao
+      ) AS diem_danh_gia,
+      COALESCE(
+        (SELECT COUNT(*)::INT FROM DanhGiaKhachSan WHERE makhachsan = ks.makhachsan AND trangthai = 'Approved'),
+        0
+      ) AS so_danh_gia,
+      COALESCE(
+        (
+          SELECT ARRAY_AGG(tn.ten ORDER BY kt.thutu ASC)
+          FROM KhachSan_TienNghi kt
+          JOIN TienNghi tn ON kt.matiennghi = tn.matiennghi
+          WHERE kt.makhachsan = ks.makhachsan
+        ), ARRAY[]::VARCHAR[]
+      ) AS tien_nghi,
+      COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
       y.created_at
     FROM YeuThich y
     JOIN KhachSan ks ON y.makhachsan = ks.makhachsan
     JOIN DiaDiem d ON ks.madiadiem = d.madiadiem
+    LEFT JOIN KhachSan_LoaiHinh kl ON ks.makhachsan = kl.makhachsan
+    LEFT JOIN LoaiHinhDuLich lh ON kl.maloaihinh = lh.maloaihinh
     WHERE y.manguoidung = $1
+    GROUP BY y.mayeuthich, ks.makhachsan, ks.madiadiem, ks.ten, ks.sosao, ks.diachi, ks.mota, ks.giathamkhao, ks.diemnoibat, ks.donvitinh, ks.booking_url, d.ten, y.created_at
     ORDER BY y.created_at DESC
   `;
 
@@ -59,28 +116,55 @@ const getWishlist = async (maNguoiDung) => {
       maYeuThich: r.mayeuthich,
       maDiaDiem: r.madiadiem,
       ten: r.ten,
+      tenDiaDiem: r.ten,
       tinhThanh: r.tinhthanh,
       danhHieu: r.danhhieu,
+      moTa: r.mota,
       anhUrl: r.anh_url,
+      loaiHinh: r.loai_hinh,
+      isFavorited: true,
       createdAt: r.created_at,
     })),
     attractions: attsRes.rows.map((r) => ({
       maYeuThich: r.mayeuthich,
       maDiemTQ: r.madiemtq,
+      maDiaDiem: r.madiadiem,
       ten: r.ten,
+      tenDiem: r.ten,
       diaChi: r.diachi,
+      moTa: r.mota,
+      diemNoiBat: r.diemnoibat,
+      giaVe: r.giave,
+      gioMoCua: r.giomocua,
       tenDiaDiem: r.ten_dia_diem,
+      tinhThanh: r.tinhthanh,
       anhDaiDien: r.anh_dai_dien,
+      diemDanhGia: parseFloat(r.diem_danh_gia),
+      soDanhGia: r.so_danh_gia,
+      loaiHinh: r.loai_hinh,
+      isFavorited: true,
       createdAt: r.created_at,
     })),
     hotels: hotelsRes.rows.map((r) => ({
       maYeuThich: r.mayeuthich,
       maKhachSan: r.makhachsan,
       ten: r.ten,
+      tenKhachSan: r.ten,
       soSao: parseFloat(r.sosao),
+      diaChi: r.diachi,
+      moTa: r.mota,
       giaThamKhao: parseInt(r.giathamkhao, 10),
+      diemNoiBat: r.diemnoibat,
+      donViTinh: r.donvitinh,
+      bookingUrl: r.booking_url,
       tenDiaDiem: r.ten_dia_diem,
+      tinhThanh: r.tinhthanh,
       anhDaiDien: r.anh_dai_dien,
+      diemDanhGia: parseFloat(r.diem_danh_gia),
+      soDanhGia: r.so_danh_gia,
+      tienNghi: r.tien_nghi,
+      loaiHinh: r.loai_hinh,
+      isFavorited: true,
       createdAt: r.created_at,
     })),
   };
@@ -145,7 +229,12 @@ const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
       ls.madiadiem, 
       d.ten AS ten_dia_diem, 
       d.tinhthanh, 
+      d.danhhieu,
+      d.mota,
+      d.thoidiemlytuong,
+      d.quymo,
       d.anh_url AS dia_diem_anh_url,
+      COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
       ls.anh_tailen_url, 
       ls.dotincay, 
       ls.ketquatopk, 
@@ -153,7 +242,10 @@ const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
       ls.searched_at
     FROM LichSuTimKiem ls
     JOIN DiaDiem d ON ls.madiadiem = d.madiadiem
+    LEFT JOIN DiaDiem_LoaiHinh dl ON d.madiadiem = dl.madiadiem
+    LEFT JOIN LoaiHinhDuLich lh ON dl.maloaihinh = lh.maloaihinh
     WHERE ls.manguoidung = $1
+    GROUP BY ls.malstimkiem, ls.madiadiem, d.ten, d.tinhthanh, d.danhhieu, d.mota, d.thoidiemlytuong, d.quymo, d.anh_url, ls.anh_tailen_url, ls.dotincay, ls.ketquatopk, ls.ghichu, ls.searched_at
     ORDER BY ls.searched_at DESC
     LIMIT $2 OFFSET $3
   `;
@@ -163,6 +255,11 @@ const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
     maDiaDiem: r.madiadiem,
     tenDiaDiem: r.ten_dia_diem,
     tinhThanh: r.tinhthanh,
+    danhHieu: r.danhhieu,
+    moTa: r.mota,
+    thoiDiemLyTuong: r.thoidiemlytuong,
+    quyMo: r.quymo,
+    loaiHinh: r.loai_hinh,
     anhTaiLenUrl: r.anh_tailen_url || r.dia_diem_anh_url,
     diaDiemAnhUrl: r.dia_diem_anh_url,
     doTinCay: parseFloat(r.dotincay),

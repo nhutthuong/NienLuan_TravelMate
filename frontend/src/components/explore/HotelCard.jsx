@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Star, Heart, ExternalLink, Sparkles } from 'lucide-react';
+import { MapPin, Star, Heart, ExternalLink, Sparkles, Trash2 } from 'lucide-react';
 
 const formatCurrency = (amount) => {
   if (!amount) return 'Liên hệ';
@@ -11,6 +11,7 @@ const HotelCard = ({
   hotel,
   matchedList = [],
   onToggleWishlist,
+  onRemove,
   onNavigate,
   defaultImage = '/images/vinh_ha_long.jpg',
   isCompact = false,
@@ -77,8 +78,20 @@ const HotelCard = ({
           </div>
         )}
 
-        {/* Wishlist Button */}
-        {onToggleWishlist && (
+        {/* Action Button: onRemove (Trash) or onToggleWishlist (Heart) */}
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(hotel);
+            }}
+            className="absolute top-3 right-3 z-10 p-2.5 rounded-full bg-white/95 hover:bg-rose-500 text-rose-500 hover:text-white shadow-sm backdrop-blur-sm transition-all cursor-pointer"
+            title="Xóa khỏi danh sách yêu thích"
+          >
+            <Trash2 size={17} />
+          </button>
+        ) : onToggleWishlist ? (
           <button
             type="button"
             onClick={(e) => {
@@ -94,16 +107,9 @@ const HotelCard = ({
           >
             <Heart size={18} className={isFav ? 'fill-rose-500' : ''} />
           </button>
-        )}
+        ) : null}
 
-        {/* Highlight Tag */}
-        {highlight && (
-          <div className="absolute bottom-3 left-3 right-3 z-10">
-            <span className="inline-block bg-teal-950/85 backdrop-blur-sm text-white px-3 py-1 rounded-md text-xs font-medium truncate max-w-full">
-              {highlight}
-            </span>
-          </div>
-        )}
+
       </div>
 
       {/* Content Section */}

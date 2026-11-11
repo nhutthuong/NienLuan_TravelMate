@@ -1,77 +1,127 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MapPin, Star, Trash2, ExternalLink, Search, ChevronDown, Map, Compass, Hotel, LogIn, UserPlus, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Heart, Search, ChevronDown, Map, Compass, Hotel, LogIn, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 import api from '../services/api';
+import DestinationCard from '../components/explore/DestinationCard';
+import HotelCard from '../components/explore/HotelCard';
+import AttractionCard from '../components/location/AttractionCard';
 
 const MOCK_FAVORITES = [
   {
-    id: 1,
+    id: 'DD0010',
+    maDiaDiem: 'DD0010',
     type: 'location',
+    ten: 'Vịnh Hạ Long',
     title: 'Vịnh Hạ Long',
-    location: 'Quảng Ninh, Việt Nam',
-    image: 'https://images.unsplash.com/photo-1528127269322-539801943592?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.9,
-    reviews: 12450,
+    tinhThanh: 'Quảng Ninh',
+    location: 'Quảng Ninh',
+    anhUrl: '/images/vinh_ha_long.jpg',
+    image: '/images/vinh_ha_long.jpg',
+    moTa: 'Di sản thiên nhiên thế giới UNESCO với hàng nghìn hòn đảo đá vôi và hang động thạch nhũ huyền ảo.',
+    loaiHinh: ['Thiên nhiên', 'Biển đảo', 'Di sản'],
     dateAdded: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 2,
+    id: 'KS0019',
+    maKhachSan: 'KS0019',
     type: 'hotel',
+    ten: 'Vinpearl Resort & Spa Hạ Long',
     title: 'Vinpearl Resort & Spa Hạ Long',
+    tenDiaDiem: 'Vịnh Hạ Long',
+    diaChi: 'Đảo Rều, Bãi Cháy, TP. Hạ Long, Quảng Ninh',
     location: 'Hạ Long, Quảng Ninh',
-    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.8,
-    reviews: 3200,
-    price: '3.120.000đ',
+    anhDaiDien: '/images/vinh_ha_long.jpg',
+    image: '/images/vinh_ha_long.jpg',
+    soSao: 5.0,
+    diemDanhGia: 4.8,
+    soDanhGia: 3200,
+    giaThamKhao: 3120000,
+    donViTinh: '/đêm',
+    diemNoiBat: 'Khu nghỉ dưỡng 4 mặt hướng biển độc đáo',
+    tienNghi: ['Hồ bơi vô cực', 'Spa trị liệu', 'Bãi biển riêng'],
+    loaiHinh: ['Nghỉ dưỡng', 'Biển đảo'],
     dateAdded: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 3,
+    id: 'DD0006',
+    maDiaDiem: 'DD0006',
     type: 'location',
+    ten: 'Quần thể danh thắng Tràng An',
     title: 'Tràng An, Ninh Bình',
-    location: 'Ninh Bình, Việt Nam',
-    image: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.9,
-    reviews: 8900,
+    tinhThanh: 'Ninh Bình',
+    location: 'Ninh Bình',
+    anhUrl: '/images/trang_an.jpg',
+    image: '/images/trang_an.jpg',
+    moTa: 'Di sản văn hóa và thiên nhiên thế giới với hệ sinh thái đất ngập nước và những dãy núi đá vôi kỳ vĩ.',
+    loaiHinh: ['Thiên nhiên', 'Di sản', 'Văn hóa'],
     dateAdded: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 4,
+    id: 'KS0011',
+    maKhachSan: 'KS0011',
     type: 'hotel',
+    ten: 'Emeralda Resort Ninh Bình',
     title: 'Emeralda Resort Tam Cốc',
-    location: 'Ninh Bình, Việt Nam',
-    image: 'https://images.unsplash.com/photo-1542314831-c6a4d142104d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.6,
-    reviews: 5120,
-    price: '2.350.000đ',
+    tenDiaDiem: 'Ninh Bình',
+    diaChi: 'Làng Tập Ninh, Gia Vân, Gia Viễn, Ninh Bình',
+    location: 'Ninh Bình',
+    anhDaiDien: '/images/trang_an.jpg',
+    image: '/images/trang_an.jpg',
+    soSao: 5.0,
+    diemDanhGia: 4.6,
+    soDanhGia: 5120,
+    giaThamKhao: 2350000,
+    donViTinh: '/đêm',
+    diemNoiBat: 'Không gian làng quê Bắc Bộ thanh bình',
+    tienNghi: ['Hồ bơi trong nhà & ngoài trời', 'Spa', 'Ẩm thực Bắc Bộ'],
+    loaiHinh: ['Nghỉ dưỡng', 'Sinh thái'],
     dateAdded: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 5,
+    id: 'TQ0011',
+    maDiemTQ: 'TQ0011',
     type: 'checkin',
+    ten: 'Hang Múa',
     title: 'Hang Múa',
-    location: 'Ninh Bình, Việt Nam',
-    image: 'https://images.unsplash.com/photo-1550650422-9df75d714b62?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.7,
-    reviews: 4500,
+    tenDiaDiem: 'Ninh Bình',
+    diaChi: 'Khê Hạ, Ninh Xuân, Hoa Lư, Ninh Bình',
+    location: 'Ninh Bình',
+    anhDaiDien: '/images/trang_an.jpg',
+    image: '/images/trang_an.jpg',
+    diemDanhGia: 4.7,
+    soDanhGia: 4500,
+    giaVe: '100.000đ / người',
+    gioMoCua: '06:00 - 19:00',
+    diemNoiBat: 'Góc nhìn toàn cảnh Tam Cốc ngoạn mục từ đỉnh núi Ngọa Long',
+    loaiHinh: ['Khám phá', 'Mạo hiểm'],
     dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
-    id: 6,
+    id: 'TQ0005',
+    maDiemTQ: 'TQ0005',
     type: 'checkin',
+    ten: 'Cầu Vàng Bà Nà Hills',
     title: 'Cầu Vàng',
+    tenDiaDiem: 'Đà Nẵng',
+    diaChi: 'Bà Nà Hills, Hòa Ninh, Hòa Vang, Đà Nẵng',
     location: 'Bà Nà Hills, Đà Nẵng',
-    image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    rating: 4.8,
-    reviews: 3100,
+    anhDaiDien: '/images/cau_vang.jpg',
+    image: '/images/cau_vang.jpg',
+    diemDanhGia: 4.8,
+    soDanhGia: 3100,
+    giaVe: 'Đã bao gồm trong vé cáp treo',
+    gioMoCua: '07:30 - 21:00',
+    diemNoiBat: 'Cây cầu độc đáo nâng đỡ bởi đôi bàn tay khổng lồ phủ rêu phong',
+    loaiHinh: ['Khám phá', 'Văn hóa'],
     dateAdded: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  }
+  },
 ];
 
 const Wishlist = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [favorites, setFavorites] = useState(MOCK_FAVORITES);
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,48 +139,81 @@ const Wishlist = () => {
           const mapped = [];
 
           (res.locations || []).forEach((loc) => {
+            const locName = loc.ten || loc.tenDiaDiem || 'Địa danh';
             mapped.push({
               id: loc.maDiaDiem,
+              maDiaDiem: loc.maDiaDiem,
               type: 'location',
-              title: loc.tenDiaDiem,
+              ten: locName,
+              title: locName,
+              tinhThanh: loc.tinhThanh || 'Việt Nam',
               location: loc.tinhThanh || 'Việt Nam',
-              image: loc.anhUrl || loc.anh_url || loc.hinhAnh || '/images/vinh_ha_long.jpg',
-              rating: parseFloat(loc.danhGiaTB) || 4.8,
-              reviews: loc.soLuotDanhGia || 1200,
-              dateAdded: loc.ngayLuu || new Date().toISOString(),
+              danhHieu: loc.danhHieu,
+              moTa: loc.moTa || '',
+              anhUrl: loc.anhUrl || loc.anh_url || '/images/vinh_ha_long.jpg',
+              image: loc.anhUrl || loc.anh_url || '/images/vinh_ha_long.jpg',
+              loaiHinh: loc.loaiHinh || [],
+              isFavorited: true,
+              dateAdded: loc.createdAt || loc.ngayLuu || new Date().toISOString(),
             });
           });
 
           (res.attractions || []).forEach((att) => {
+            const attName = att.ten || att.tenDiem || 'Điểm check-in';
             mapped.push({
               id: att.maDiemTQ,
+              maDiemTQ: att.maDiemTQ,
               maDiaDiem: att.maDiaDiem,
               type: 'checkin',
-              title: att.tenDiem,
+              ten: attName,
+              title: attName,
+              diaChi: att.diaChi || att.tenDiaDiem || 'Điểm check-in',
               location: att.diaChi || att.tenDiaDiem || 'Điểm check-in',
-              image: att.anhUrl || att.anh_url || att.hinhAnh || '/images/cau_vang.jpg',
-              rating: parseFloat(att.danhGiaTB) || 4.7,
-              reviews: att.soLuotDanhGia || 800,
-              dateAdded: att.ngayLuu || new Date().toISOString(),
+              moTa: att.moTa || '',
+              diemNoiBat: att.diemNoiBat || att.moTa || '',
+              giaVe: att.giaVe || 'Miễn phí',
+              gioMoCua: att.gioMoCua || 'Mở cửa cả ngày',
+              tenDiaDiem: att.tenDiaDiem || att.tinhThanh,
+              tinhThanh: att.tinhThanh,
+              anhDaiDien: att.anhDaiDien || att.anhUrl || '/images/cau_vang.jpg',
+              image: att.anhDaiDien || att.anhUrl || '/images/cau_vang.jpg',
+              diemDanhGia: parseFloat(att.diemDanhGia || att.danhGiaTB || 5.0),
+              rating: parseFloat(att.diemDanhGia || att.danhGiaTB || 5.0),
+              soDanhGia: att.soDanhGia || att.soLuotDanhGia || 0,
+              reviews: att.soDanhGia || att.soLuotDanhGia || 0,
+              loaiHinh: att.loaiHinh || [],
+              isFavorited: true,
+              dateAdded: att.createdAt || att.ngayLuu || new Date().toISOString(),
             });
           });
 
           (res.hotels || []).forEach((hotel) => {
-            const priceVal = hotel.giaThapNhat || hotel.giaTB;
-            const formattedPrice = priceVal
-              ? new Intl.NumberFormat('vi-VN').format(priceVal) + 'đ'
-              : 'Liên hệ';
-
+            const hotelName = hotel.ten || hotel.tenKhachSan || 'Khách sạn';
             mapped.push({
               id: hotel.maKhachSan,
+              maKhachSan: hotel.maKhachSan,
               type: 'hotel',
-              title: hotel.tenKhachSan,
+              ten: hotelName,
+              title: hotelName,
+              diaChi: hotel.diaChi || hotel.tenDiaDiem || 'Khách sạn',
               location: hotel.diaChi || hotel.tenDiaDiem || 'Khách sạn',
-              image: hotel.anhUrl || hotel.anh_url || hotel.hinhAnh || '/images/mui_ne.jpg',
-              rating: parseFloat(hotel.danhGiaTB) || 4.8,
-              reviews: hotel.soLuotDanhGia || 500,
-              price: formattedPrice,
-              dateAdded: hotel.ngayLuu || new Date().toISOString(),
+              soSao: parseFloat(hotel.soSao || 5.0),
+              moTa: hotel.moTa || '',
+              giaThamKhao: hotel.giaThamKhao || 0,
+              donViTinh: hotel.donViTinh || '/đêm',
+              diemNoiBat: hotel.diemNoiBat || '',
+              bookingUrl: hotel.bookingUrl,
+              tenDiaDiem: hotel.tenDiaDiem,
+              anhDaiDien: hotel.anhDaiDien || hotel.anhUrl || '/images/vinh_ha_long.jpg',
+              image: hotel.anhDaiDien || hotel.anhUrl || '/images/vinh_ha_long.jpg',
+              diemDanhGia: parseFloat(hotel.diemDanhGia || hotel.danhGiaTB || 4.8),
+              rating: parseFloat(hotel.diemDanhGia || hotel.danhGiaTB || 4.8),
+              soDanhGia: hotel.soDanhGia || hotel.soLuotDanhGia || 0,
+              reviews: hotel.soDanhGia || hotel.soLuotDanhGia || 0,
+              tienNghi: hotel.tienNghi || [],
+              loaiHinh: hotel.loaiHinh || [],
+              isFavorited: true,
+              dateAdded: hotel.createdAt || hotel.ngayLuu || new Date().toISOString(),
             });
           });
 
@@ -155,7 +238,9 @@ const Wishlist = () => {
 
     if (searchQuery.trim() === '') return true;
     const query = searchQuery.toLowerCase();
-    return item.title.toLowerCase().includes(query) || item.location.toLowerCase().includes(query);
+    const itemName = (item.ten || item.title || '').toLowerCase();
+    const itemLoc = (item.diaChi || item.tenDiaDiem || item.tinhThanh || item.location || '').toLowerCase();
+    return itemName.includes(query) || itemLoc.includes(query);
   });
 
   const now = new Date();
@@ -173,18 +258,24 @@ const Wishlist = () => {
   });
 
   const removeFavorite = async (item) => {
+    const targetId = item.maDiaDiem || item.maDiemTQ || item.maKhachSan || item.id;
     try {
       if (isAuthenticated) {
         let payload = {};
-        if (item.type === 'location') payload = { maDiaDiem: item.id };
-        else if (item.type === 'checkin') payload = { maDiemTQ: item.id };
-        else if (item.type === 'hotel') payload = { maKhachSan: item.id };
+        if (item.type === 'location') payload = { maDiaDiem: targetId };
+        else if (item.type === 'checkin') payload = { maDiemTQ: targetId };
+        else if (item.type === 'hotel') payload = { maKhachSan: targetId };
         await api.wishlist.toggle(payload);
       }
     } catch (err) {
       console.error('Loi khi xoa khoi wishlist:', err);
     }
-    setFavorites((prev) => prev.filter((i) => !(i.id === item.id && i.type === item.type)));
+    setFavorites((prev) =>
+      prev.filter((i) => {
+        const iId = i.maDiaDiem || i.maDiemTQ || i.maKhachSan || i.id;
+        return !(iId === targetId && i.type === item.type);
+      })
+    );
   };
 
   const countAll = favorites.length;
@@ -202,79 +293,52 @@ const Wishlist = () => {
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
           <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-            {typeName === 'location' && <Map className="text-blue-600" size={24} />}
-            {typeName === 'checkin' && <Compass className="text-orange-500" size={24} />}
-            {typeName === 'hotel' && <Hotel className="text-blue-600" size={24} />}
+            {typeName === 'location' && <Map className="text-sky-600" size={24} />}
+            {typeName === 'checkin' && <Compass className="text-amber-500" size={24} />}
+            {typeName === 'hotel' && <Hotel className="text-teal-600" size={24} />}
             {typeName === 'location' && 'Danh thắng & Địa điểm đã lưu'}
             {typeName === 'checkin' && 'Điểm check-in nổi bật đã lưu'}
             {typeName === 'hotel' && 'Khu nghỉ dưỡng & Khách sạn đã lưu'}
           </h2>
-          <span className="text-sm font-medium text-slate-500">{items.length} địa điểm nổi bật</span>
+          <span className="text-sm font-medium text-slate-500">
+            {items.length} {typeName === 'location' ? 'địa điểm' : typeName === 'hotel' ? 'khách sạn' : 'điểm check-in'}
+          </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {items.map((item) => (
-            <div
-              key={`${item.type}-${item.id}`}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col"
-            >
-              <div className="relative h-56 overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-7">
+          {items.map((item) => {
+            const key = `${item.type}-${item.maDiaDiem || item.maDiemTQ || item.maKhachSan || item.id}`;
+            if (item.type === 'location') {
+              return (
+                <DestinationCard
+                  key={key}
+                  destination={item}
+                  onRemove={removeFavorite}
+                  onNavigate={(id) => navigate(`/location/${id}`)}
                 />
-                <div className="absolute top-3 left-3 flex gap-2">
-                  <span className="px-3 py-1 bg-blue-600/90 backdrop-blur-sm text-xs font-bold rounded-lg text-white shadow-sm flex items-center gap-1">
-                    {item.type === 'hotel' && 'Đối tác VIP'}
-                    {item.type !== 'hotel' && 'Nổi bật'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => removeFavorite(item)}
-                  className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-rose-500 hover:bg-rose-500 hover:text-white transition-colors shadow-sm z-10"
-                  title="Xóa khỏi danh sách"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex items-center gap-1.5 text-blue-600 mb-1 text-xs font-bold uppercase">
-                  <span className="truncate">{item.location}</span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
-
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                  <div className="flex flex-col">
-                    {item.type !== 'location' && (
-                      <div className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded w-fit mb-1">
-                        <Star size={12} className="text-amber-500 fill-amber-500" />
-                        <span className="text-xs font-bold text-amber-700">{item.rating}</span>
-                      </div>
-                    )}
-                    {item.price && (
-                      <span className="text-blue-700 font-bold mt-1 text-lg">
-                        {item.price}
-                        <span className="text-xs font-normal text-slate-500">/đêm</span>
-                      </span>
-                    )}
-                  </div>
-                  <Link
-                    to={
-                      item.type === 'location'
-                        ? `/location/${item.id}`
-                        : item.type === 'checkin'
-                        ? `/service/attraction/${item.id}`
-                        : `/service/hotel/${item.id}`
-                    }
-                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    {item.type === 'hotel' ? 'Đặt phòng' : 'Chi tiết'} <ExternalLink size={14} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            }
+            if (item.type === 'hotel') {
+              return (
+                <HotelCard
+                  key={key}
+                  hotel={item}
+                  onRemove={removeFavorite}
+                  onNavigate={(id) => navigate(`/service/hotel/${id}`)}
+                />
+              );
+            }
+            if (item.type === 'checkin') {
+              return (
+                <AttractionCard
+                  key={key}
+                  spot={item}
+                  onRemove={removeFavorite}
+                  onNavigate={(id) => navigate(`/service/attraction/${id}`)}
+                />
+              );
+            }
+            return null;
+          })}
         </div>
       </div>
     );
@@ -312,7 +376,7 @@ const Wishlist = () => {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
                 <Link
                   to="/login"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg"
                 >
                   <LogIn size={18} />
                   <span>Đăng nhập ngay</span>
@@ -329,7 +393,7 @@ const Wishlist = () => {
               {/* Feature Highlights Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-slate-100 text-left">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-lg bg-sky-100 text-primary flex items-center justify-center font-bold text-sm mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm mb-2">
                     <CheckCircle2 size={16} />
                   </div>
                   <h4 className="text-sm font-bold text-slate-800 mb-1">Lưu trữ không giới hạn</h4>
@@ -363,14 +427,14 @@ const Wishlist = () => {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-slate-50 font-sans">
       <div className="flex-grow pt-28 pb-12">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Header Section */}
           <div className="mb-10">
-            <h1 className="text-4xl font-extrabold text-slate-900 mb-4 flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-3 flex items-center gap-3">
               <Heart className="text-rose-500 fill-rose-500" size={36} />
               Danh Sách Yêu Thích
             </h1>
-            <p className="text-slate-500 text-lg">
+            <p className="text-slate-500 text-base sm:text-lg">
               Lưu trữ và quản lý những địa điểm, khách sạn mà bạn muốn ghé thăm trong tương lai.
             </p>
           </div>
@@ -378,7 +442,7 @@ const Wishlist = () => {
           {/* Layout: Sidebar (Left) + Content (Right) */}
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Sidebar Filter (Left) */}
-            <div className="w-full lg:w-1/4 shrink-0 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 sticky top-28 z-20">
+            <div className="w-full lg:w-72 xl:w-80 shrink-0 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 sticky top-28 z-20">
               <h3 className="text-lg font-bold text-slate-800 mb-5">Bộ lọc & Tìm kiếm</h3>
 
               <div className="mb-6">
@@ -388,7 +452,7 @@ const Wishlist = () => {
                   <input
                     type="text"
                     placeholder="Nhập tên, địa điểm..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all text-sm"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -401,7 +465,7 @@ const Wishlist = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all appearance-none text-sm text-slate-700 cursor-pointer"
+                    className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all appearance-none text-sm text-slate-700 cursor-pointer"
                   >
                     <option value="newest">Mới thêm gần đây</option>
                     <option value="1_day">Thêm 1 ngày trước</option>
@@ -417,9 +481,9 @@ const Wishlist = () => {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between cursor-pointer ${
                       filter === 'all'
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-sky-600 text-white shadow-md'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
                     }`}
                   >
@@ -427,7 +491,7 @@ const Wishlist = () => {
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                         filter === 'all'
-                          ? 'bg-blue-500/50 text-white'
+                          ? 'bg-sky-500/50 text-white'
                           : 'bg-white text-slate-500 shadow-sm border border-slate-200'
                       }`}
                     >
@@ -436,19 +500,20 @@ const Wishlist = () => {
                   </button>
                   <button
                     onClick={() => setFilter('location')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between cursor-pointer ${
                       filter === 'location'
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-sky-600 text-white shadow-md'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Map size={18} /> Địa điểm
+                      <Map size={18} />
+                      <span>Địa điểm</span>
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                         filter === 'location'
-                          ? 'bg-blue-500/50 text-white'
+                          ? 'bg-sky-500/50 text-white'
                           : 'bg-white text-slate-500 shadow-sm border border-slate-200'
                       }`}
                     >
@@ -457,19 +522,20 @@ const Wishlist = () => {
                   </button>
                   <button
                     onClick={() => setFilter('hotel')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between cursor-pointer ${
                       filter === 'hotel'
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-sky-600 text-white shadow-md'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Hotel size={18} /> Resort & Khách sạn
+                      <Hotel size={18} />
+                      <span>Resort & Khách sạn</span>
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                         filter === 'hotel'
-                          ? 'bg-blue-500/50 text-white'
+                          ? 'bg-sky-500/50 text-white'
                           : 'bg-white text-slate-500 shadow-sm border border-slate-200'
                       }`}
                     >
@@ -478,19 +544,20 @@ const Wishlist = () => {
                   </button>
                   <button
                     onClick={() => setFilter('checkin')}
-                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between ${
+                    className={`px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-between cursor-pointer ${
                       filter === 'checkin'
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'bg-sky-600 text-white shadow-md'
                         : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent hover:border-slate-200'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Compass size={18} /> Điểm Check-in
+                      <Compass size={18} />
+                      <span>Điểm Check-in</span>
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                         filter === 'checkin'
-                          ? 'bg-blue-500/50 text-white'
+                          ? 'bg-sky-500/50 text-white'
                           : 'bg-white text-slate-500 shadow-sm border border-slate-200'
                       }`}
                     >
@@ -502,7 +569,7 @@ const Wishlist = () => {
             </div>
 
             {/* Main Content (Right) */}
-            <div className="w-full lg:w-3/4">
+            <div className="w-full lg:flex-1 min-w-0">
               {processedFavorites.length > 0 ? (
                 <>
                   {(filter === 'all' || filter === 'location') && renderGrid(locations, 'location')}
@@ -511,8 +578,8 @@ const Wishlist = () => {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 border-dashed">
-                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-                    <Heart size={40} className="text-blue-400" />
+                  <div className="w-24 h-24 bg-sky-50 rounded-full flex items-center justify-center mb-6">
+                    <Heart size={40} className="text-sky-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-slate-800 mb-2">
                     {favorites.length === 0 ? 'Chưa có mục yêu thích nào' : 'Không tìm thấy mục nào'}

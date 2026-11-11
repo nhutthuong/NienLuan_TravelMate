@@ -45,6 +45,49 @@ const LOCATION_FALLBACK_IMAGES = {
   10: '/images/ho_hoan_kiem.jpg',
 };
 
+const LOCATION_INFO_MAP = {
+  DD0001: { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
+  DD0002: { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
+  DD0003: { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
+  DD0004: { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  DD0005: { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
+  DD0006: { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3 & Tháng 5' },
+  DD0007: { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
+  DD0008: { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
+  DD0009: { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  DD0010: { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11' },
+  1: { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11' },
+  2: { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3 & Tháng 5' },
+  3: { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
+  4: { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
+  5: { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  6: { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
+  7: { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
+  8: { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
+  9: { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
+  10: { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
+};
+
+const LOCATION_INFO_BY_NAME = {
+  'Đà Lạt': { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
+  'Vịnh Hạ Long': { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6' },
+  'Ninh Bình': { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3' },
+  'Tràng An': { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3' },
+  'Đà Nẵng': { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
+  'Cầu Vàng': { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Khám phá', 'Biển đảo', 'Nghỉ dưỡng'], thoiDiem: 'Tháng 3 – Tháng 8' },
+  'Hội An': { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
+  'Phố Cổ Hội An': { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
+  'Hà Nội': { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  'Hồ Hoàn Kiếm': { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Tâm linh'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  'Sapa': { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  'Đỉnh Fansipan': { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
+  'Phú Quốc': { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
+  'Phan Thiết': { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
+  'Mũi Né': { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
+  'Cần Thơ': { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
+  'Chợ Nổi Cái Răng': { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
+};
+
 const resolveImageUrl = (url, locationId) => {
   const fallback = (locationId && LOCATION_FALLBACK_IMAGES[locationId]) || '/images/vinh_ha_long.jpg';
   if (!url || typeof url !== 'string' || url.trim() === '') return fallback;
@@ -69,7 +112,9 @@ const INITIAL_HISTORY = [
       id: 1,
       name: 'Vịnh Hạ Long',
       province: 'Quảng Ninh',
-      category: 'Kỳ quan thiên nhiên thế giới'
+      danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO',
+      category: 'Kỳ quan Thiên nhiên Thế giới UNESCO',
+      thoiDiemLyTuong: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11'
     },
     confidence: 99.4,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -79,7 +124,7 @@ const INITIAL_HISTORY = [
       { name: 'Tràng An', confidence: 0.4 },
       { name: 'Phú Quốc', confidence: 0.1 }
     ],
-    tags: ['Di sản UNESCO', 'Đảo đá vôi', 'Biển đảo'],
+    tags: ['Di sản', 'Thiên nhiên', 'Biển đảo'],
     notes: 'Ảnh chụp từ trên du thuyền vịnh Hạ Long trong chuyến đi công tác.'
   },
   {
@@ -90,7 +135,9 @@ const INITIAL_HISTORY = [
       id: 2,
       name: 'Tràng An',
       province: 'Ninh Bình',
-      category: 'Di sản thế giới kép'
+      danhHieu: 'Di sản Thế giới kép UNESCO',
+      category: 'Di sản Thế giới kép UNESCO',
+      thoiDiemLyTuong: 'Tháng 1 – Tháng 3 & Tháng 5'
     },
     confidence: 98.7,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -100,7 +147,7 @@ const INITIAL_HISTORY = [
       { name: 'Vịnh Hạ Long', confidence: 0.9 },
       { name: 'Hồ Hoàn Kiếm', confidence: 0.2 }
     ],
-    tags: ['Sinh thái sông nước', 'Thuyền nan', 'Núi non'],
+    tags: ['Di sản', 'Thiên nhiên', 'Tâm linh'],
     notes: 'Chèo thuyền tham quan hang Sáng - hang Tối.'
   },
   {
@@ -111,7 +158,9 @@ const INITIAL_HISTORY = [
       id: 4,
       name: 'Cầu Vàng',
       province: 'Đà Nẵng',
-      category: 'Điểm nhấn kiến trúc'
+      danhHieu: 'Thành phố đáng sống bậc nhất',
+      category: 'Thành phố đáng sống bậc nhất',
+      thoiDiemLyTuong: 'Tháng 3 – Tháng 8'
     },
     confidence: 97.8,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -121,7 +170,7 @@ const INITIAL_HISTORY = [
       { name: 'Đỉnh Fansipan', confidence: 1.5 },
       { name: 'Phố Cổ Hội An', confidence: 0.4 }
     ],
-    tags: ['Bà Nà Hills', 'Bàn tay khổng lồ', 'Sương mù'],
+    tags: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'],
     notes: 'Check-in lúc sáng sớm trước khi đông khách.'
   },
   {
@@ -132,7 +181,9 @@ const INITIAL_HISTORY = [
       id: 3,
       name: 'Phố Cổ Hội An',
       province: 'Quảng Nam',
-      category: 'Di sản văn hóa thế giới'
+      danhHieu: 'Di sản Văn hóa Thế giới UNESCO',
+      category: 'Di sản Văn hóa Thế giới UNESCO',
+      thoiDiemLyTuong: 'Tháng 2 – Tháng 7'
     },
     confidence: 99.1,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -142,7 +193,7 @@ const INITIAL_HISTORY = [
       { name: 'Hồ Hoàn Kiếm', confidence: 0.6 },
       { name: 'Chợ Nổi Cái Răng', confidence: 0.2 }
     ],
-    tags: ['Phố cổ đèn lồng', 'Sông Hoài', 'Văn hóa cổ kính'],
+    tags: ['Di sản', 'Văn hóa', 'Ẩm thực'],
     notes: 'Ảnh chụp đèn lồng rực rỡ buổi tối bên bờ sông Hoài.'
   },
   {
@@ -153,7 +204,9 @@ const INITIAL_HISTORY = [
       id: 5,
       name: 'Đỉnh Fansipan',
       province: 'Sapa, Lào Cai',
-      category: 'Khám phá mạo hiểm'
+      danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương',
+      category: 'Thị trấn trong mây & Nóc nhà Đông Dương',
+      thoiDiemLyTuong: 'Tháng 9 – Tháng 11'
     },
     confidence: 96.5,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -163,7 +216,7 @@ const INITIAL_HISTORY = [
       { name: 'Cầu Vàng', confidence: 2.3 },
       { name: 'Hồ Xuân Hương', confidence: 0.8 }
     ],
-    tags: ['Nóc nhà Đông Dương', 'Cột mốc 3143m', 'Biển mây'],
+    tags: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'],
     notes: 'Săn mây thành công ở độ cao 3.143 mét.'
   },
   {
@@ -174,7 +227,9 @@ const INITIAL_HISTORY = [
       id: 6,
       name: 'Chợ Nổi Cái Răng',
       province: 'Cần Thơ',
-      category: 'Văn hóa miền Tây'
+      danhHieu: 'Đô thị sông nước Tây Đô',
+      category: 'Đô thị sông nước Tây Đô',
+      thoiDiemLyTuong: 'Tháng 12 – Tháng 4'
     },
     confidence: 95.9,
     aiModel: 'ResNet50 (Transfer Learning)',
@@ -184,7 +239,7 @@ const INITIAL_HISTORY = [
       { name: 'Phú Quốc', confidence: 2.8 },
       { name: 'Tràng An', confidence: 0.9 }
     ],
-    tags: ['Sông Tiền - Sông Hậu', 'Cây Bẹo', 'Ẩm thực ghe thuyền'],
+    tags: ['Sinh thái', 'Ẩm thực', 'Văn hóa'],
     notes: 'Ăn hủ tiếu tô trên ghe lúc 6h sáng.'
   }
 ];
@@ -228,6 +283,14 @@ const History = () => {
               const fallbackImage = (targetLocId && LOCATION_FALLBACK_IMAGES[targetLocId]) || '/images/vinh_ha_long.jpg';
               const rawImage = item.anhTaiLenUrl || item.diaDiemAnhUrl || item.anhDauVao || item.userUploadedImage || fallbackImage;
 
+              const locName = item.tenDiaDiem || item.predictedLocation?.name || 'Địa danh';
+              const locInfo = LOCATION_INFO_MAP[targetLocId] || LOCATION_INFO_BY_NAME[locName] || {};
+              const resolvedDanhHieu = item.danhHieu || item.danhhieu || locInfo.danhHieu || 'Điểm đến du lịch';
+              const resolvedLoaiHinh = (Array.isArray(item.loaiHinh) && item.loaiHinh.length > 0)
+                ? item.loaiHinh
+                : (locInfo.loaiHinh || ['Thiên nhiên', 'Khám phá']);
+              const resolvedThoiDiem = item.thoiDiemLyTuong || item.thoidiemlytuong || locInfo.thoiDiem || '';
+
               return {
                 id: item.maLSTimKiem || item.maLichSu || item.id || `hist-${Math.random()}`,
                 userUploadedImage: resolveImageUrl(rawImage, targetLocId),
@@ -235,15 +298,18 @@ const History = () => {
                   item.searchedAt || item.thoiGianQuet || item.analyzedAt || new Date().toISOString(),
                 predictedLocation: {
                   id: targetLocId,
-                  name: item.tenDiaDiem || item.predictedLocation?.name || 'Vịnh Hạ Long',
-                  province: item.tinhThanh || item.predictedLocation?.province || 'Quảng Ninh',
-                  category: item.theLoai || item.predictedLocation?.category || 'Kỳ quan thiên nhiên',
+                  name: locName,
+                  province: item.tinhThanh || item.predictedLocation?.province || 'Việt Nam',
+                  danhHieu: resolvedDanhHieu,
+                  category: resolvedDanhHieu,
+                  loaiHinh: resolvedLoaiHinh,
+                  thoiDiemLyTuong: resolvedThoiDiem,
                 },
                 confidence: parseFloat(item.doTinCay || item.confidence || 98.5) || 98.5,
                 aiModel: item.moHinh || item.aiModel || 'ResNet50 (Transfer Learning)',
                 status: 'success',
                 topPredictions: topPreds,
-                tags: Array.isArray(item.tags) ? item.tags : ['Thị giác máy tính', 'ResNet50'],
+                tags: resolvedLoaiHinh,
                 notes: item.ghiChu || item.notes || '',
               };
             });
@@ -314,14 +380,16 @@ const History = () => {
     if (!item) return false;
     const locName = item.predictedLocation?.name || '';
     const locProv = item.predictedLocation?.province || '';
+    const locDanhHieu = item.predictedLocation?.danhHieu || '';
     const tags = Array.isArray(item.tags) ? item.tags : [];
 
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       const matchName = locName.toLowerCase().includes(q);
       const matchProv = locProv.toLowerCase().includes(q);
+      const matchDanhHieu = locDanhHieu.toLowerCase().includes(q);
       const matchTags = tags.some((t) => typeof t === 'string' && t.toLowerCase().includes(q));
-      if (!matchName && !matchProv && !matchTags) return false;
+      if (!matchName && !matchProv && !matchDanhHieu && !matchTags) return false;
     }
 
     const now = new Date();
@@ -350,6 +418,13 @@ const History = () => {
           ) / totalScans
         ).toFixed(1)
       : '0.0';
+
+  const TOTAL_AI_LOCATIONS = 10;
+  const uniqueLocationsCount = new Set(
+    (historyList || [])
+      .map((item) => item.predictedLocation?.id || item.predictedLocation?.name)
+      .filter(Boolean)
+  ).size;
 
   if (!isAuthenticated) {
     return (
@@ -479,12 +554,12 @@ const History = () => {
                 <div className="text-2xl md:text-3xl font-extrabold text-white font-heading">{avgConfidence}%</div>
                 <div className="text-xs text-sky-100 font-medium">Độ tin cậy TB</div>
               </div>
-              <div className="px-3 text-center">
+              <div className="px-3 text-center" title={`Đã khám phá ${uniqueLocationsCount} trên ${TOTAL_AI_LOCATIONS} địa danh AI hỗ trợ`}>
                 <div className="inline-flex items-center gap-1 text-emerald-300 font-bold text-sm">
                   <CheckCircle2 size={16} />
-                  <span>10/10</span>
+                  <span>{uniqueLocationsCount}/{TOTAL_AI_LOCATIONS}</span>
                 </div>
-                <div className="text-xs text-sky-100 font-medium">Địa danh</div>
+                <div className="text-xs text-sky-100 font-medium">Đã khám phá</div>
               </div>
             </div>
           </div>
@@ -589,9 +664,13 @@ const History = () => {
             {filteredList.map((item) => {
               const locId = item.predictedLocation?.id || 1;
               const locName = item.predictedLocation?.name || 'Địa danh';
-              const locCategory = item.predictedLocation?.category || 'Kỳ quan thiên nhiên';
               const locProvince = item.predictedLocation?.province || 'Việt Nam';
-              const itemTags = Array.isArray(item.tags) ? item.tags : [];
+              const locInfo = LOCATION_INFO_MAP[locId] || LOCATION_INFO_BY_NAME[locName] || {};
+              const locDanhHieu = item.predictedLocation?.danhHieu || locInfo.danhHieu || 'Điểm đến du lịch';
+              const itemCategories = (Array.isArray(item.tags) && item.tags.length > 0)
+                ? item.tags
+                : (locInfo.loaiHinh || ['Thiên nhiên', 'Khám phá']);
+              const locThoiDiem = item.predictedLocation?.thoiDiemLyTuong || locInfo.thoiDiem || '';
               const itemConfidence = parseFloat(item.confidence) || 98.5;
 
               return (
@@ -638,23 +717,22 @@ const History = () => {
                       <Eye size={14} />
                       <span>Chi tiết AI</span>
                     </button>
-
-                    {/* Timestamp Tag */}
-                    <div className="absolute bottom-3 left-3 text-white text-xs font-medium drop-shadow flex items-center gap-1">
-                      <Clock size={12} className="text-sky-300" />
-                      <span>{formatTimeAgo(item.analyzedAt)}</span>
-                    </div>
                   </div>
 
                   {/* Card Body */}
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      {/* Category & Province */}
-                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
-                        <span className="font-semibold text-primary uppercase tracking-wider">
-                          {locCategory}
+                      {/* Danh hiệu CSDL & Tỉnh thành */}
+                      <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5 gap-2">
+                        <span 
+                          className="font-semibold text-primary uppercase tracking-wider text-[11px] truncate max-w-[200px]"
+                          title={locDanhHieu}
+                        >
+                          {locDanhHieu}
                         </span>
-                        <span>{locProvince}</span>
+                        <span className="font-medium text-slate-500 shrink-0">
+                          {locProvince}
+                        </span>
                       </div>
 
                       {/* Location Name */}
@@ -664,23 +742,33 @@ const History = () => {
                         </Link>
                       </h3>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {itemTags.map((tag, idx) => (
+                      {/* Loại hình du lịch thực tế từ CSDL */}
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {itemCategories.slice(0, 3).map((category, idx) => (
                           <span
                             key={idx}
-                            className="px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-medium border border-sky-100"
+                            className="px-2.5 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-semibold border border-sky-100/80"
                           >
-                            #{tag}
+                            {category}
                           </span>
                         ))}
                       </div>
 
+                      {/* Thời điểm lý tưởng từ CSDL */}
+                      {locThoiDiem && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-3.5 bg-slate-50/80 px-2.5 py-1.5 rounded-lg border border-slate-100">
+                          <Calendar size={13} className="text-primary shrink-0" />
+                          <span className="truncate">
+                            Mùa lý tưởng: <strong className="text-slate-700 font-medium">{locThoiDiem}</strong>
+                          </span>
+                        </div>
+                      )}
+
                       {/* AI Confidence Progress Bar */}
                       <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
                         <div className="flex justify-between items-center text-xs mb-1">
-                          <span className="text-slate-500 font-medium">Mô hình phân loại</span>
-                          <span className="font-semibold text-slate-700">ResNet50</span>
+                          <span className="text-slate-500 font-medium">Độ khớp nhận diện</span>
+                          <span className="font-semibold text-primary">{itemConfidence}%</span>
                         </div>
                         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                           <div
@@ -693,13 +781,10 @@ const History = () => {
 
                     {/* Card Actions Footer */}
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <button
-                        onClick={() => setSelectedItem(item)}
-                        className="text-xs font-semibold text-slate-600 hover:text-primary transition-colors flex items-center gap-1"
-                      >
-                        <BarChart3 size={14} />
-                        <span>Xác suất Top-3</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <Clock size={13} className="text-slate-400 shrink-0" />
+                        <span>{formatTimeAgo(item.analyzedAt)}</span>
+                      </div>
 
                       <Link
                         to={`/location/${locId}`}
@@ -825,8 +910,8 @@ const History = () => {
                   <h4 className="text-2xl font-bold font-heading text-slate-800">
                     {selectedItem.predictedLocation?.name || 'Địa danh'}
                   </h4>
-                  <p className="text-sm text-slate-600">
-                    {selectedItem.predictedLocation?.province || 'Việt Nam'} • {selectedItem.predictedLocation?.category || 'Kỳ quan thiên nhiên'}
+                  <p className="text-sm text-slate-600 font-medium">
+                    {selectedItem.predictedLocation?.province || 'Việt Nam'} • {selectedItem.predictedLocation?.danhHieu || selectedItem.predictedLocation?.category || 'Điểm đến du lịch'}
                   </p>
                   <div className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1">
                     <Clock size={13} />

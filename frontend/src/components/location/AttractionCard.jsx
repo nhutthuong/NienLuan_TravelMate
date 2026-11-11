@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Ticket, Star, Heart, Sparkles, ChevronRight } from 'lucide-react';
+import { Clock, Ticket, Star, Heart, Sparkles, ChevronRight, Trash2, MapPin } from 'lucide-react';
 
 const AttractionCard = ({
   spot,
   matchedList = [],
   onToggleWishlist,
+  onRemove,
   onNavigate,
   defaultImage = '/images/vinh_ha_long.jpg',
   isCompact = false,
@@ -15,6 +16,8 @@ const AttractionCard = ({
   const spotId = spot.maDiemTQ || spot.madiemtq;
   const spotImg = spot.anhDaiDien || spot.anh_dai_dien || defaultImage;
   const spotName = spot.ten || spot.name;
+  const destinationName =
+    spot.tenDiaDiem || spot.ten_dia_diem || spot.tinhThanh || spot.tinhthanh || spot.location;
   const highlight = spot.diemNoiBat || spot.diemnoibat || spot.moTa;
   const rating = parseFloat(spot.diemDanhGia || spot.diem_danh_gia || 5.0).toFixed(1);
   const reviewCount = spot.soDanhGia || spot.so_danh_gia || 0;
@@ -50,10 +53,13 @@ const AttractionCard = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
-        {/* Top Type Badge */}
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-sky-800 text-xs sm:text-sm font-bold px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 z-10">
-          <span>Điểm tham quan</span>
-        </div>
+        {/* Destination Badge */}
+        {destinationName && (
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-sky-900 text-xs sm:text-sm font-bold px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5 z-10">
+            <MapPin size={13} className="text-sky-700" />
+            <span>{destinationName}</span>
+          </div>
+        )}
 
         {/* Matched Preference Badge */}
         {matchedList && matchedList.length > 0 && (
@@ -65,8 +71,20 @@ const AttractionCard = ({
           </div>
         )}
 
-        {/* Wishlist Button */}
-        {onToggleWishlist && (
+        {/* Action Button: onRemove (Trash) or onToggleWishlist (Heart) */}
+        {onRemove ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(spot);
+            }}
+            className="absolute top-3 right-3 z-10 p-2.5 rounded-full bg-white/95 hover:bg-rose-500 text-rose-500 hover:text-white shadow-sm backdrop-blur-sm transition-all cursor-pointer"
+            title="Xóa khỏi danh sách yêu thích"
+          >
+            <Trash2 size={17} />
+          </button>
+        ) : onToggleWishlist ? (
           <button
             type="button"
             onClick={(e) => {
@@ -82,7 +100,7 @@ const AttractionCard = ({
           >
             <Heart size={18} className={isFav ? 'fill-rose-500' : ''} />
           </button>
-        )}
+        ) : null}
 
         {/* Rating Floating Badge */}
         <div className="absolute bottom-3 left-3 z-10">
@@ -132,21 +150,21 @@ const AttractionCard = ({
         {/* Details & Hours / Ticket Footer */}
         <div className="border-t border-slate-100 pt-3 space-y-2 mt-auto text-xs">
           {/* Hours */}
-          <div className="flex items-center justify-between text-slate-600">
-            <span className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center justify-between gap-2 text-slate-600">
+            <span className="flex items-center gap-1.5 text-slate-400 whitespace-nowrap shrink-0">
               <Clock size={13} />
               <span>Giờ mở cửa</span>
             </span>
-            <span className="font-semibold text-slate-800 whitespace-nowrap">{hours}</span>
+            <span className="font-semibold text-slate-800 truncate text-right">{hours}</span>
           </div>
 
           {/* Ticket */}
-          <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5 text-slate-400 whitespace-nowrap shrink-0">
               <Ticket size={13} />
               <span>Vé tham quan</span>
             </span>
-            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md max-w-[65%] truncate text-right">
+            <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md truncate text-right">
               {ticket}
             </span>
           </div>

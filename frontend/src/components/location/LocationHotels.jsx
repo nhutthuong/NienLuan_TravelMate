@@ -72,38 +72,57 @@ const LocationHotels = ({
                     className={`w-4 h-4 ${hotel.isFavorited ? 'fill-rose-500' : ''}`}
                   />
                 </button>
-                {hotel.diemNoiBat && (
-                  <span className="absolute bottom-3 left-3 bg-white/95 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
-                    {hotel.diemNoiBat}
+                {/* Loai hinh du lich theo CSDL (neu co) hoac dia danh */}
+                {Array.isArray(hotel.loaiHinh) && hotel.loaiHinh.length > 0 ? (
+                  <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5 z-10 max-w-[85%]">
+                    {hotel.loaiHinh.slice(0, 2).map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm border border-white/10"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : (hotel.tenDiaDiem || hotel.tinhThanh) ? (
+                  <span className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-sm border border-white/10 flex items-center gap-1">
+                    <MapPin size={12} className="text-emerald-400" />
+                    {hotel.tenDiaDiem || hotel.tinhThanh}
                   </span>
-                )}
+                ) : null}
               </div>
 
               <div className="p-6 md:w-3/5 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-start mb-2 gap-2">
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors leading-snug">
-                      {hotel.ten}
-                    </h3>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <div className="flex text-amber-400">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= (hotel.soSao || 4)
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-gray-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      {hotel.diemDanhGia && (
-                        <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-100">
-                          {parseFloat(hotel.diemDanhGia).toFixed(1)} / 5.0
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors leading-snug">
+                        {hotel.ten}
+                      </h3>
+
+                      {/* Hạng sao khách sạn (Tiêu chuẩn cơ sở lưu trú) */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex text-amber-400">
+                          {Array.from({ length: Math.round(hotel.soSao || 5) }).map((_, i) => (
+                            <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
+                          ))}
+                        </div>
+                        <span className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-md">
+                          Khách sạn {hotel.soSao || 5} sao
                         </span>
-                      )}
+                      </div>
                     </div>
+
+                    {/* Diem danh gia cua khach hang */}
+                    {hotel.diemDanhGia && (
+                      <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-xl text-slate-700 text-xs sm:text-sm font-semibold shrink-0 self-start sm:self-auto shadow-xs">
+                        <Star size={13} className="fill-amber-400 text-amber-400 shrink-0" />
+                        <span>Đánh giá {parseFloat(hotel.diemDanhGia).toFixed(1)}/5.0</span>
+                        {hotel.soDanhGia > 0 && (
+                          <span className="text-slate-400 font-normal text-xs">({hotel.soDanhGia})</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-gray-500 text-sm mb-4 flex items-center gap-1.5">

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Filter, Loader2, Sparkles, Check, X } from 'lucide-react';
+import { Search, Filter, Loader2, Sparkles, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import DestinationCard from './DestinationCard';
 
 const DestinationsView = ({
   destinations = [],
@@ -402,127 +403,14 @@ const DestinationsView = ({
       ) : filteredDestinations.length > 0 ? (
         /* Destinations Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {filteredDestinations.map((dest) => {
-            const destId = dest.maDiaDiem || dest.id;
-            const destName = dest.ten || dest.name;
-            const location = dest.tinhThanh || dest.location;
-            const image = dest.anhUrl || dest.anh_url || dest.image || '/images/vinh_ha_long.jpg';
-            const categoriesList = Array.isArray(dest.loaiHinh) && dest.loaiHinh.length > 0
-              ? dest.loaiHinh
-              : Array.isArray(dest.loai_hinh) && dest.loai_hinh.length > 0
-              ? dest.loai_hinh
-              : (dest.category ? [dest.category] : ['Khám phá']);
-            const desc = dest.moTa || dest.mota || dest.desc || '';
-            const matchedList = getMatchedPreferences(dest);
-
-            // Display up to 2 categories as chips, show +N tooltip for remaining
-            const visibleCategories = categoriesList.slice(0, 2);
-            const remainingCount = Math.max(0, categoriesList.length - visibleCategories.length);
-
-            return (
-              <div
-                key={destId}
-                onClick={() => navigate(`/location/${destId}`)}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 hover:-translate-y-2 hover:shadow-xl hover:border-primary/50 transition-all duration-300 group cursor-pointer flex flex-col"
-              >
-                {/* Image without star rating or single top category */}
-                <div className="relative h-64 overflow-hidden bg-slate-100">
-                  <img
-                    src={image}
-                    alt={destName}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/images/vinh_ha_long.jpg';
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-
-                  {/* Personalized match badge on image overlay */}
-                  {matchedList.length > 0 && (
-                    <div className="absolute bottom-3 left-3 right-3 z-10">
-                      <div className="bg-slate-900/90 backdrop-blur-md text-amber-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md border border-amber-300/40">
-                        <Sparkles size={14} className="text-amber-400 shrink-0" />
-                        <span className="truncate">
-                          Khớp với sở thích: {matchedList.join(', ')}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-6 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-primary transition-colors">
-                        {destName}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-1 text-slate-500 text-sm mb-4">
-                      <MapPin size={16} className="text-slate-400 shrink-0" />
-                      <span>{location}</span>
-                    </div>
-                    <p className="text-slate-600 text-sm mb-6 line-clamp-2 leading-relaxed">{desc}</p>
-                  </div>
-
-                  {/* Bottom Footer: Multiple Categories Chips + Hover Tooltip (Replacing Reviews) */}
-                  <div className="border-t border-slate-100 pt-3.5 flex justify-between items-center mt-auto gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-                      {visibleCategories.map((cat, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-medium truncate max-w-[110px]"
-                          title={cat}
-                        >
-                          {cat}
-                        </span>
-                      ))}
-
-                      {remainingCount > 0 && (
-                        <div
-                          className="relative group/tooltip inline-flex items-center cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="px-1.5 py-0.5 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold cursor-pointer transition-colors">
-                            +{remainingCount}
-                          </span>
-
-                          {/* Hover Tooltip with full category details */}
-                          <div className="absolute bottom-full left-0 mb-2 hidden group-hover/tooltip:flex flex-col z-30 p-2.5 bg-slate-900 text-white rounded-xl shadow-xl text-xs backdrop-blur-md pointer-events-none border border-slate-700 animate-fadeIn min-w-[160px] max-w-[240px]">
-                            <span className="text-[10px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">
-                              Tất cả loại hình ({categoriesList.length}):
-                            </span>
-                            <div className="flex flex-wrap gap-1">
-                              {categoriesList.map((cat, idx) => (
-                                <span
-                                  key={idx}
-                                  className="bg-white/15 px-1.5 py-0.5 rounded text-[11px] font-medium text-white"
-                                >
-                                  {cat}
-                                </span>
-                              ))}
-                            </div>
-                            <div className="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 left-2.5 border-r border-b border-slate-700" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/location/${destId}`);
-                      }}
-                      className="text-primary font-bold text-xs hover:underline flex items-center gap-1 shrink-0 cursor-pointer ml-auto"
-                    >
-                      <span>Xem chi tiết</span>
-                      <span>&rarr;</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredDestinations.map((dest) => (
+            <DestinationCard
+              key={dest.maDiaDiem || dest.id}
+              destination={dest}
+              matchedList={getMatchedPreferences(dest)}
+              onNavigate={(id) => navigate(`/location/${id}`)}
+            />
+          ))}
         </div>
       ) : (
         <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm mb-16">

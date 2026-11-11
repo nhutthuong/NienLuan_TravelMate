@@ -17,7 +17,7 @@ const DEFAULT_CATEGORIES = [
   { maLoaiHinh: 'LH0011', ten: 'Sinh thái', icon: Leaf, desc: 'Miệt vườn cây trái, rừng bảo tồn' },
 ];
 
-const PreferencesModal = ({ isOpen, onClose }) => {
+const PreferencesModal = ({ isOpen, onClose, zIndex = 'z-[70]' }) => {
   const { user, updatePreferences } = useAuth();
   const [selected, setSelected] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
@@ -85,7 +85,7 @@ const PreferencesModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+    <div className={`fixed inset-0 ${zIndex} flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn`}>
       <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 relative max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-slate-100">

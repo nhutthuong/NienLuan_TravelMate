@@ -539,10 +539,10 @@ const LocationExploreModal = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-white px-6 sm:px-8 py-4.5 flex justify-between items-center border-b border-slate-200/90 shadow-xs z-10">
+          <div className="bg-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center border-b border-slate-200/90 shadow-xs z-10 shrink-0">
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                   Khám phá & Trải nghiệm
                 </h2>
                 <span className="hidden sm:inline-flex items-center gap-1 bg-sky-50 text-sky-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-sky-200">
@@ -550,7 +550,7 @@ const LocationExploreModal = ({
                   <span>{locationName}</span>
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1.5">
                 Danh sách đầy đủ điểm check-in tiêu biểu và cơ sở lưu trú tại {locationName}
               </p>
             </div>
@@ -1202,6 +1202,7 @@ const LocationExploreModal = ({
         <PreferencesModal
           isOpen={isPrefModalOpen}
           onClose={() => setIsPrefModalOpen(false)}
+          zIndex="z-[80]"
         />
       )}
     </>
