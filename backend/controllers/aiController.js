@@ -16,28 +16,6 @@ const predict = async (req, res) => {
     const aiResult = await aiService.predictImage(req.file.buffer, req.file.originalname);
     const currentUserId = req.user ? req.user.maNguoiDung : null;
 
-    let anhTaiLenUrl = null;
-
-    if (currentUserId) {
-      try {
-        const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
-        const filename = `${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
-        const targetPath = path.join(historyDir, filename);
-        await fs.promises.writeFile(targetPath, req.file.buffer);
-        anhTaiLenUrl = `/uploads/history/${filename}`;
-
-        await interactionModel.saveSearchHistory(
-          currentUserId,
-          aiResult.maDiaDiem,
-          anhTaiLenUrl,
-          aiResult.confidence,
-          aiResult.topK
-        );
-      } catch (saveErr) {
-        console.error('Loi khi luu lich su tim kiem:', saveErr.message);
-      }
-    }
-
     const topKIds = (aiResult.topK || []).map((k) => k.maDiaDiem).filter(Boolean);
     const [location, suggestedHotels, suggestedAttractions, topKDetails] = await Promise.all([
       locationModel.getById(aiResult.maDiaDiem, currentUserId),
@@ -50,10 +28,12 @@ const predict = async (req, res) => {
 
     const enrichedTopK = (aiResult.topK || []).map((k, idx) => {
       const detail = detailsMap.get(k.maDiaDiem) || {};
+      const locName = detail.ten || k.locationName;
       return {
         index: idx,
         maDiaDiem: k.maDiaDiem,
-        ten: detail.ten || k.locationName,
+        ten: locName,
+        locationName: locName,
         tinhThanh: detail.tinhThanh || '',
         danhHieu: detail.danhHieu || '',
         anhUrl: detail.anhUrl || '',
@@ -61,14 +41,42 @@ const predict = async (req, res) => {
       };
     });
 
+    let anhTaiLenUrl = null;
+
+    let savedRecord = null;
+    const ghiChu = req.body?.ghiChu || null;
+
+    if (currentUserId) {
+      try {
+        const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+        const filename = `${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
+        const targetPath = path.join(historyDir, filename);
+        await fs.promises.writeFile(targetPath, req.file.buffer);
+        anhTaiLenUrl = `/uploads/history/${filename}`;
+
+        savedRecord = await interactionModel.saveSearchHistory(
+          currentUserId,
+          aiResult.maDiaDiem,
+          anhTaiLenUrl,
+          aiResult.confidence,
+          enrichedTopK,
+          ghiChu
+        );
+      } catch (saveErr) {
+        console.error('Loi khi luu lich su tim kiem:', saveErr.message);
+      }
+    }
+
     return res.status(200).json({
       prediction: {
+        maLSTimKiem: savedRecord ? savedRecord.malstimkiem : null,
         maDiaDiem: aiResult.maDiaDiem,
         tenDiaDiem: aiResult.locationName,
         doTinCay: aiResult.confidence,
         lowConfidence: aiResult.lowConfidence,
         topK: enrichedTopK,
         anhTaiLenUrl,
+        ghiChu,
       },
       location,
       suggestedHotels,

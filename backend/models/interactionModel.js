@@ -1,4 +1,8 @@
+const path = require('path');
+const fs = require('fs');
 const { query } = require('../config/db');
+
+const historyDir = path.join(__dirname, '../uploads/history');
 
 // ================= 1. YEU THICH (WISHLIST) =================
 
@@ -222,7 +226,7 @@ const saveSearchHistory = async (maNguoiDung, maDiaDiem, anhTaiLenUrl, doTinCay,
   return result.rows[0];
 };
 
-const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
+const getSearchHistory = async (maNguoiDung, limit = 100, offset = 0) => {
   const sql = `
     SELECT 
       ls.malstimkiem, 
@@ -241,7 +245,7 @@ const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
       ls.ghichu, 
       ls.searched_at
     FROM LichSuTimKiem ls
-    JOIN DiaDiem d ON ls.madiadiem = d.madiadiem
+    LEFT JOIN DiaDiem d ON ls.madiadiem = d.madiadiem
     LEFT JOIN DiaDiem_LoaiHinh dl ON d.madiadiem = dl.madiadiem
     LEFT JOIN LoaiHinhDuLich lh ON dl.maloaihinh = lh.maloaihinh
     WHERE ls.manguoidung = $1
@@ -249,30 +253,135 @@ const getSearchHistory = async (maNguoiDung, limit = 20, offset = 0) => {
     ORDER BY ls.searched_at DESC
     LIMIT $2 OFFSET $3
   `;
-  const result = await query(sql, [maNguoiDung, limit, offset]);
-  return result.rows.map((r) => ({
-    maLSTimKiem: r.malstimkiem,
-    maDiaDiem: r.madiadiem,
-    tenDiaDiem: r.ten_dia_diem,
-    tinhThanh: r.tinhthanh,
-    danhHieu: r.danhhieu,
-    moTa: r.mota,
-    thoiDiemLyTuong: r.thoidiemlytuong,
-    quyMo: r.quymo,
-    loaiHinh: r.loai_hinh,
-    anhTaiLenUrl: r.anh_tailen_url || r.dia_diem_anh_url,
-    diaDiemAnhUrl: r.dia_diem_anh_url,
-    doTinCay: parseFloat(r.dotincay),
-    ketQuaTopK: typeof r.ketquatopk === 'string' ? JSON.parse(r.ketquatopk) : r.ketquatopk,
-    ghiChu: r.ghichu,
-    searchedAt: r.searched_at,
-  }));
+  const [result, allLocationsRes] = await Promise.all([
+    query(sql, [maNguoiDung, limit, offset]),
+    query('SELECT madiadiem, ten, tinhthanh, danhhieu, anh_url FROM DiaDiem'),
+  ]);
+
+  const locationMap = new Map((allLocationsRes.rows || []).map((loc) => [loc.madiadiem, loc]));
+
+  return result.rows.map((r) => {
+    let parsedTopK = typeof r.ketquatopk === 'string' ? JSON.parse(r.ketquatopk) : r.ketquatopk;
+    if (Array.isArray(parsedTopK)) {
+      parsedTopK = parsedTopK.map((item, idx) => {
+        const locDetail = (item.maDiaDiem && locationMap.get(item.maDiaDiem)) || {};
+        const locName = item.locationName || item.ten || locDetail.ten || item.label || (idx === 0 ? r.ten_dia_diem : 'Địa danh');
+        const conf = typeof item.confidence !== 'undefined'
+          ? parseFloat(item.confidence)
+          : typeof item.score !== 'undefined'
+          ? parseFloat((item.score * 100).toFixed(2))
+          : (idx === 0 ? parseFloat(r.dotincay) : 0);
+
+        return {
+          ...item,
+          maDiaDiem: item.maDiaDiem || locDetail.madiadiem || null,
+          locationName: locName,
+          ten: locName,
+          tinhThanh: item.tinhThanh || locDetail.tinhthanh || '',
+          danhHieu: item.danhHieu || locDetail.danhhieu || '',
+          anhUrl: item.anhUrl || locDetail.anh_url || '',
+          confidence: isNaN(conf) ? 0 : conf,
+        };
+      });
+    }
+
+    return {
+      maLSTimKiem: r.malstimkiem,
+      maDiaDiem: r.madiadiem,
+      tenDiaDiem: r.ten_dia_diem,
+      tinhThanh: r.tinhthanh,
+      danhHieu: r.danhhieu,
+      moTa: r.mota,
+      thoiDiemLyTuong: r.thoidiemlytuong,
+      quyMo: r.quymo,
+      loaiHinh: r.loai_hinh,
+      anhTaiLenUrl: r.anh_tailen_url || r.dia_diem_anh_url,
+      diaDiemAnhUrl: r.dia_diem_anh_url,
+      doTinCay: parseFloat(r.dotincay),
+      ketQuaTopK: parsedTopK,
+      ghiChu: r.ghichu,
+      searchedAt: r.searched_at,
+    };
+  });
+};
+
+const deleteHistoryImageFile = async (imageUrl) => {
+  if (!imageUrl || typeof imageUrl !== 'string') return;
+  if (!imageUrl.startsWith('/uploads/history/')) return;
+
+  const filename = path.basename(imageUrl);
+  if (!filename) return;
+
+  try {
+    const checkSql = 'SELECT COUNT(*)::INT as count FROM LichSuTimKiem WHERE anh_tailen_url = $1';
+    const checkRes = await query(checkSql, [imageUrl]);
+    if (parseInt(checkRes.rows[0]?.count || '0', 10) > 0) {
+      return;
+    }
+
+    const filePath = path.join(historyDir, filename);
+    if (fs.existsSync(filePath)) {
+      await fs.promises.unlink(filePath);
+      console.log(`[InteractionModel] Da xoa file anh lich su: ${filename}`);
+    }
+  } catch (err) {
+    console.error(`[InteractionModel] Loi khi xoa file anh ${filename}:`, err.message);
+  }
+};
+
+const cleanOrphanedHistoryImages = async () => {
+  try {
+    if (!fs.existsSync(historyDir)) return { deletedCount: 0 };
+
+    const res = await query("SELECT DISTINCT anh_tailen_url FROM LichSuTimKiem WHERE anh_tailen_url LIKE '/uploads/history/%'");
+    const activeFilenames = new Set(
+      res.rows.map((r) => path.basename(r.anh_tailen_url)).filter(Boolean)
+    );
+
+    const allFiles = await fs.promises.readdir(historyDir);
+    let deletedCount = 0;
+    for (const file of allFiles) {
+      if (!activeFilenames.has(file)) {
+        const fullPath = path.join(historyDir, file);
+        try {
+          await fs.promises.unlink(fullPath);
+          deletedCount++;
+          console.log(`[InteractionModel] Da don dep anh khong dung: ${file}`);
+        } catch (unlinkErr) {
+          console.error(`[InteractionModel] Khong the xoa ${file}:`, unlinkErr.message);
+        }
+      }
+    }
+    return { deletedCount };
+  } catch (err) {
+    console.error('[InteractionModel] Loi khi don dep thu muc history:', err.message);
+    return { deletedCount: 0 };
+  }
 };
 
 const deleteSearchHistory = async (maLSTimKiem, maNguoiDung) => {
-  const sql = 'DELETE FROM LichSuTimKiem WHERE malstimkiem = $1 AND manguoidung = $2 RETURNING malstimkiem';
+  const sql = 'DELETE FROM LichSuTimKiem WHERE malstimkiem = $1 AND manguoidung = $2 RETURNING malstimkiem, anh_tailen_url';
   const result = await query(sql, [maLSTimKiem, maNguoiDung]);
-  return result.rows.length > 0;
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
+};
+
+const clearAllSearchHistory = async (maNguoiDung) => {
+  const sql = 'DELETE FROM LichSuTimKiem WHERE manguoidung = $1 RETURNING malstimkiem, anh_tailen_url';
+  const result = await query(sql, [maNguoiDung]);
+  return result.rows;
+};
+
+const updateSearchHistoryNote = async (maLSTimKiem, maNguoiDung, ghiChu) => {
+  const sql = `
+    UPDATE LichSuTimKiem
+    SET ghichu = $1
+    WHERE malstimkiem = $2 AND manguoidung = $3
+    RETURNING malstimkiem, ghichu
+  `;
+  const result = await query(sql, [ghiChu, maLSTimKiem, maNguoiDung]);
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
 };
 
 // ================= 3. QUAN LY DANH GIA & BINH LUAN (ADMIN) =================
@@ -459,6 +568,10 @@ module.exports = {
   saveSearchHistory,
   getSearchHistory,
   deleteSearchHistory,
+  clearAllSearchHistory,
+  updateSearchHistoryNote,
+  deleteHistoryImageFile,
+  cleanOrphanedHistoryImages,
   getAllReviews,
   updateReviewStatus,
   deleteReview,

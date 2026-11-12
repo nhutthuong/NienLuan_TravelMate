@@ -47,6 +47,23 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     loadUserProfile();
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        const newToken = e.newValue;
+        setToken(newToken);
+        if (newToken) {
+          loadUserProfile();
+        } else {
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [loadUserProfile]);
 
   const login = async (email, matKhau) => {

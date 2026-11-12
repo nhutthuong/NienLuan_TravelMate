@@ -10,87 +10,26 @@ import {
   Camera, 
   UploadCloud, 
   AlertCircle,
+  AlertTriangle,
   Eye,
   RefreshCw,
   BarChart3,
   X,
   LogIn,
-  UserPlus
+  UserPlus,
+  PenLine,
+  Edit2,
+  Check
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
 import api from '../services/api';
 
-const LOCATION_FALLBACK_IMAGES = {
-  DD0001: '/images/cho_noi.jpg',
-  DD0002: '/images/ho_xuan_huong.jpg',
-  DD0003: '/images/cau_vang.jpg',
-  DD0004: '/images/ho_hoan_kiem.jpg',
-  DD0005: '/images/hoi_an.jpg',
-  DD0006: '/images/trang_an.jpg',
-  DD0007: '/images/mui_ne.jpg',
-  DD0008: '/images/phu_quoc.jpg',
-  DD0009: '/images/fansipan.jpg',
-  DD0010: '/images/vinh_ha_long.jpg',
-  1: '/images/vinh_ha_long.jpg',
-  2: '/images/trang_an.jpg',
-  3: '/images/cau_vang.jpg',
-  4: '/images/hoi_an.jpg',
-  5: '/images/fansipan.jpg',
-  6: '/images/cho_noi.jpg',
-  7: '/images/phu_quoc.jpg',
-  8: '/images/ho_xuan_huong.jpg',
-  9: '/images/mui_ne.jpg',
-  10: '/images/ho_hoan_kiem.jpg',
-};
 
-const LOCATION_INFO_MAP = {
-  DD0001: { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
-  DD0002: { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
-  DD0003: { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
-  DD0004: { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  DD0005: { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
-  DD0006: { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3 & Tháng 5' },
-  DD0007: { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
-  DD0008: { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
-  DD0009: { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  DD0010: { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11' },
-  1: { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11' },
-  2: { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3 & Tháng 5' },
-  3: { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
-  4: { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
-  5: { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  6: { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
-  7: { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
-  8: { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
-  9: { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
-  10: { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
-};
 
-const LOCATION_INFO_BY_NAME = {
-  'Đà Lạt': { danhHieu: 'Thành phố ngàn hoa & sương mù', loaiHinh: ['Nghỉ dưỡng', 'Thiên nhiên', 'Sinh thái'], thoiDiem: 'Tháng 11 – Tháng 3' },
-  'Vịnh Hạ Long': { danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Biển đảo'], thoiDiem: 'Tháng 4 – Tháng 6' },
-  'Ninh Bình': { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3' },
-  'Tràng An': { danhHieu: 'Di sản Thế giới kép UNESCO', loaiHinh: ['Di sản', 'Thiên nhiên', 'Tâm linh'], thoiDiem: 'Tháng 1 – Tháng 3' },
-  'Đà Nẵng': { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 3 – Tháng 8' },
-  'Cầu Vàng': { danhHieu: 'Thành phố đáng sống bậc nhất', loaiHinh: ['Khám phá', 'Biển đảo', 'Nghỉ dưỡng'], thoiDiem: 'Tháng 3 – Tháng 8' },
-  'Hội An': { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
-  'Phố Cổ Hội An': { danhHieu: 'Di sản Văn hóa Thế giới UNESCO', loaiHinh: ['Di sản', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 2 – Tháng 7' },
-  'Hà Nội': { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Ẩm thực'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  'Hồ Hoàn Kiếm': { danhHieu: 'Thủ đô ngàn năm văn hiến', loaiHinh: ['Lịch sử', 'Văn hóa', 'Tâm linh'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  'Sapa': { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  'Đỉnh Fansipan': { danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương', loaiHinh: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'], thoiDiem: 'Tháng 9 – Tháng 11' },
-  'Phú Quốc': { danhHieu: 'Đảo ngọc thiên đường nghỉ dưỡng', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'], thoiDiem: 'Tháng 11 – Tháng 4' },
-  'Phan Thiết': { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
-  'Mũi Né': { danhHieu: 'Thiên đường nắng vàng biển xanh', loaiHinh: ['Biển đảo', 'Nghỉ dưỡng', 'Mạo hiểm'], thoiDiem: 'Tháng 10 – Tháng 4' },
-  'Cần Thơ': { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
-  'Chợ Nổi Cái Răng': { danhHieu: 'Đô thị sông nước Tây Đô', loaiHinh: ['Sinh thái', 'Ẩm thực', 'Văn hóa'], thoiDiem: 'Tháng 12 – Tháng 4' },
-};
-
-const resolveImageUrl = (url, locationId) => {
-  const fallback = (locationId && LOCATION_FALLBACK_IMAGES[locationId]) || '/images/vinh_ha_long.jpg';
-  if (!url || typeof url !== 'string' || url.trim() === '') return fallback;
+const resolveImageUrl = (url, fallbackUrl = '/images/vinh_ha_long.jpg') => {
+  if (!url || typeof url !== 'string' || url.trim() === '') return fallbackUrl;
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
     return url;
   }
@@ -103,230 +42,123 @@ const resolveImageUrl = (url, locationId) => {
   return url;
 };
 
-const INITIAL_HISTORY = [
-  {
-    id: 'hist-001',
-    userUploadedImage: '/images/vinh_ha_long.jpg',
-    analyzedAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
-    predictedLocation: {
-      id: 1,
-      name: 'Vịnh Hạ Long',
-      province: 'Quảng Ninh',
-      danhHieu: 'Kỳ quan Thiên nhiên Thế giới UNESCO',
-      category: 'Kỳ quan Thiên nhiên Thế giới UNESCO',
-      thoiDiemLyTuong: 'Tháng 4 – Tháng 6 & Tháng 9 – Tháng 11'
-    },
-    confidence: 99.4,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Vịnh Hạ Long', confidence: 99.4 },
-      { name: 'Tràng An', confidence: 0.4 },
-      { name: 'Phú Quốc', confidence: 0.1 }
-    ],
-    tags: ['Di sản', 'Thiên nhiên', 'Biển đảo'],
-    notes: 'Ảnh chụp từ trên du thuyền vịnh Hạ Long trong chuyến đi công tác.'
-  },
-  {
-    id: 'hist-002',
-    userUploadedImage: '/images/trang_an.jpg',
-    analyzedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-    predictedLocation: {
-      id: 2,
-      name: 'Tràng An',
-      province: 'Ninh Bình',
-      danhHieu: 'Di sản Thế giới kép UNESCO',
-      category: 'Di sản Thế giới kép UNESCO',
-      thoiDiemLyTuong: 'Tháng 1 – Tháng 3 & Tháng 5'
-    },
-    confidence: 98.7,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Tràng An', confidence: 98.7 },
-      { name: 'Vịnh Hạ Long', confidence: 0.9 },
-      { name: 'Hồ Hoàn Kiếm', confidence: 0.2 }
-    ],
-    tags: ['Di sản', 'Thiên nhiên', 'Tâm linh'],
-    notes: 'Chèo thuyền tham quan hang Sáng - hang Tối.'
-  },
-  {
-    id: 'hist-003',
-    userUploadedImage: '/images/cau_vang.jpg',
-    analyzedAt: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
-    predictedLocation: {
-      id: 4,
-      name: 'Cầu Vàng',
-      province: 'Đà Nẵng',
-      danhHieu: 'Thành phố đáng sống bậc nhất',
-      category: 'Thành phố đáng sống bậc nhất',
-      thoiDiemLyTuong: 'Tháng 3 – Tháng 8'
-    },
-    confidence: 97.8,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Cầu Vàng', confidence: 97.8 },
-      { name: 'Đỉnh Fansipan', confidence: 1.5 },
-      { name: 'Phố Cổ Hội An', confidence: 0.4 }
-    ],
-    tags: ['Biển đảo', 'Nghỉ dưỡng', 'Khám phá'],
-    notes: 'Check-in lúc sáng sớm trước khi đông khách.'
-  },
-  {
-    id: 'hist-004',
-    userUploadedImage: '/images/hoi_an.jpg',
-    analyzedAt: new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString(),
-    predictedLocation: {
-      id: 3,
-      name: 'Phố Cổ Hội An',
-      province: 'Quảng Nam',
-      danhHieu: 'Di sản Văn hóa Thế giới UNESCO',
-      category: 'Di sản Văn hóa Thế giới UNESCO',
-      thoiDiemLyTuong: 'Tháng 2 – Tháng 7'
-    },
-    confidence: 99.1,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Phố Cổ Hội An', confidence: 99.1 },
-      { name: 'Hồ Hoàn Kiếm', confidence: 0.6 },
-      { name: 'Chợ Nổi Cái Răng', confidence: 0.2 }
-    ],
-    tags: ['Di sản', 'Văn hóa', 'Ẩm thực'],
-    notes: 'Ảnh chụp đèn lồng rực rỡ buổi tối bên bờ sông Hoài.'
-  },
-  {
-    id: 'hist-005',
-    userUploadedImage: '/images/fansipan.jpg',
-    analyzedAt: new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString(),
-    predictedLocation: {
-      id: 5,
-      name: 'Đỉnh Fansipan',
-      province: 'Sapa, Lào Cai',
-      danhHieu: 'Thị trấn trong mây & Nóc nhà Đông Dương',
-      category: 'Thị trấn trong mây & Nóc nhà Đông Dương',
-      thoiDiemLyTuong: 'Tháng 9 – Tháng 11'
-    },
-    confidence: 96.5,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Đỉnh Fansipan', confidence: 96.5 },
-      { name: 'Cầu Vàng', confidence: 2.3 },
-      { name: 'Hồ Xuân Hương', confidence: 0.8 }
-    ],
-    tags: ['Khám phá', 'Mạo hiểm', 'Thiên nhiên'],
-    notes: 'Săn mây thành công ở độ cao 3.143 mét.'
-  },
-  {
-    id: 'hist-006',
-    userUploadedImage: '/images/cho_noi.jpg',
-    analyzedAt: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString(),
-    predictedLocation: {
-      id: 6,
-      name: 'Chợ Nổi Cái Răng',
-      province: 'Cần Thơ',
-      danhHieu: 'Đô thị sông nước Tây Đô',
-      category: 'Đô thị sông nước Tây Đô',
-      thoiDiemLyTuong: 'Tháng 12 – Tháng 4'
-    },
-    confidence: 95.9,
-    aiModel: 'ResNet50 (Transfer Learning)',
-    status: 'success',
-    topPredictions: [
-      { name: 'Chợ Nổi Cái Răng', confidence: 95.9 },
-      { name: 'Phú Quốc', confidence: 2.8 },
-      { name: 'Tràng An', confidence: 0.9 }
-    ],
-    tags: ['Sinh thái', 'Ẩm thực', 'Văn hóa'],
-    notes: 'Ăn hủ tiếu tô trên ghe lúc 6h sáng.'
-  }
-];
-
 const History = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  const [historyList, setHistoryList] = useState(INITIAL_HISTORY);
+  const [historyList, setHistoryList] = useState([]);
+  const [totalLocations, setTotalLocations] = useState(10);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [timeFilter, setTimeFilter] = useState('all');
   const [confidenceFilter, setConfidenceFilter] = useState('all');
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteInput, setNoteInput] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (isAuthenticated) {
-      const fetchHistory = api.history?.get || api.history?.getAll;
-      if (typeof fetchHistory === 'function') {
-        fetchHistory()
-          .then((res) => {
-            if (!isMounted || !Array.isArray(res) || res.length === 0) return;
+    // Reset modals and state immediately when user context changes or logs out
+    setSelectedItem(null);
+    setDeleteConfirmId(null);
 
-            const mapped = res.map((item) => {
-              const topPreds = Array.isArray(item.ketQuaTopK)
-                ? item.ketQuaTopK.map((p) => ({
-                    name: p.name || p.label || p.tenDiaDiem || 'Địa danh',
-                    confidence: parseFloat(p.confidence || (p.score ? (p.score * 100).toFixed(1) : 0)) || 0,
-                  }))
-                : Array.isArray(item.topPredictions)
-                ? item.topPredictions
-                : [
-                    {
-                      name: item.tenDiaDiem || 'Địa danh',
-                      confidence: parseFloat(item.doTinCay || 98.5) || 98.5,
-                    },
-                  ];
+    if (!isAuthenticated || !user?.maNguoiDung) {
+      setHistoryList([]);
+      setIsLoading(false);
+      return;
+    }
 
-              const targetLocId = item.maDiaDiem || item.predictedLocation?.id || 1;
-              const fallbackImage = (targetLocId && LOCATION_FALLBACK_IMAGES[targetLocId]) || '/images/vinh_ha_long.jpg';
-              const rawImage = item.anhTaiLenUrl || item.diaDiemAnhUrl || item.anhDauVao || item.userUploadedImage || fallbackImage;
+    setIsLoading(true);
 
-              const locName = item.tenDiaDiem || item.predictedLocation?.name || 'Địa danh';
-              const locInfo = LOCATION_INFO_MAP[targetLocId] || LOCATION_INFO_BY_NAME[locName] || {};
-              const resolvedDanhHieu = item.danhHieu || item.danhhieu || locInfo.danhHieu || 'Điểm đến du lịch';
-              const resolvedLoaiHinh = (Array.isArray(item.loaiHinh) && item.loaiHinh.length > 0)
-                ? item.loaiHinh
-                : (locInfo.loaiHinh || ['Thiên nhiên', 'Khám phá']);
-              const resolvedThoiDiem = item.thoiDiemLyTuong || item.thoidiemlytuong || locInfo.thoiDiem || '';
+    // Fetch dynamic total locations from database
+    if (typeof api.locations?.getAll === 'function') {
+      api.locations
+        .getAll()
+        .then((locs) => {
+          if (isMounted && Array.isArray(locs) && locs.length > 0) {
+            setTotalLocations(locs.length);
+          }
+        })
+        .catch((err) => console.error('Loi khi tai danh sach dia diem:', err));
+    }
+
+    const fetchHistory = api.history?.get || api.history?.getAll;
+    if (typeof fetchHistory === 'function') {
+      fetchHistory({ limit: 100 })
+        .then((res) => {
+          if (!isMounted) return;
+          const list = Array.isArray(res) ? res : (Array.isArray(res?.history) ? res.history : []);
+
+          const mapped = list.map((item) => {
+            const locId = item.maDiaDiem || item.madiadiem || 'DD0001';
+            const locName = item.tenDiaDiem || item.ten_dia_diem || item.ten || 'Địa danh';
+            const locProvince = item.tinhThanh || item.tinhthanh || 'Việt Nam';
+            const locDanhHieu = item.danhHieu || item.danhhieu || 'Điểm đến du lịch';
+            const locThoiDiem = item.thoiDiemLyTuong || item.thoidiemlytuong || '';
+            const locCategories = Array.isArray(item.loaiHinh) && item.loaiHinh.length > 0
+              ? item.loaiHinh
+              : ['Khám phá', 'Thiên nhiên'];
+            const userImage = item.anhTaiLenUrl || item.anh_tailen_url || item.diaDiemAnhUrl || item.dia_diem_anh_url || '';
+            const fallbackImage = item.diaDiemAnhUrl || item.dia_diem_anh_url || '/images/vinh_ha_long.jpg';
+
+            const rawTopK = Array.isArray(item.ketQuaTopK) ? item.ketQuaTopK : [];
+            const topPredictions = rawTopK.map((p, idx) => {
+              const predName = p.locationName || p.ten || p.label || p.name || (idx === 0 ? locName : 'Địa danh');
+              const predConf = typeof p.confidence !== 'undefined'
+                ? parseFloat(p.confidence)
+                : typeof p.score !== 'undefined'
+                ? parseFloat((p.score * 100).toFixed(2))
+                : (idx === 0 ? parseFloat(item.doTinCay || item.dotincay || 0) : 0);
 
               return {
-                id: item.maLSTimKiem || item.maLichSu || item.id || `hist-${Math.random()}`,
-                userUploadedImage: resolveImageUrl(rawImage, targetLocId),
-                analyzedAt:
-                  item.searchedAt || item.thoiGianQuet || item.analyzedAt || new Date().toISOString(),
-                predictedLocation: {
-                  id: targetLocId,
-                  name: locName,
-                  province: item.tinhThanh || item.predictedLocation?.province || 'Việt Nam',
-                  danhHieu: resolvedDanhHieu,
-                  category: resolvedDanhHieu,
-                  loaiHinh: resolvedLoaiHinh,
-                  thoiDiemLyTuong: resolvedThoiDiem,
-                },
-                confidence: parseFloat(item.doTinCay || item.confidence || 98.5) || 98.5,
-                aiModel: item.moHinh || item.aiModel || 'ResNet50 (Transfer Learning)',
-                status: 'success',
-                topPredictions: topPreds,
-                tags: resolvedLoaiHinh,
-                notes: item.ghiChu || item.notes || '',
+                name: predName,
+                confidence: isNaN(predConf) ? 0 : predConf,
+                maDiaDiem: p.maDiaDiem || null,
               };
             });
 
-            setHistoryList(mapped);
-          })
-          .catch((err) => {
-            console.error('Loi khi tai lich su:', err);
-            // Retain default mock history on error
+            return {
+              id: item.maLSTimKiem || item.malstimkiem || item.id,
+              userUploadedImage: userImage,
+              fallbackImage: fallbackImage,
+              analyzedAt: item.searchedAt || item.searched_at || new Date().toISOString(),
+              predictedLocation: {
+                id: locId,
+                name: locName,
+                province: locProvince,
+                danhHieu: locDanhHieu,
+                category: locDanhHieu,
+                loaiHinh: locCategories,
+                thoiDiemLyTuong: locThoiDiem,
+              },
+              confidence: parseFloat(item.doTinCay || item.dotincay || 0) || 0,
+              aiModel: 'ResNet50 (Transfer Learning)',
+              status: 'success',
+              topPredictions: topPredictions.length > 0 ? topPredictions : [{ name: locName, confidence: parseFloat(item.doTinCay || 0) || 0 }],
+              tags: locCategories,
+              notes: item.ghiChu || item.ghichu || '',
+            };
           });
-      }
+
+          setHistoryList(mapped);
+        })
+        .catch((err) => {
+          console.error('Loi khi tai lich su:', err);
+          if (isMounted) {
+            setHistoryList([]);
+          }
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
     }
 
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.maNguoiDung]);
 
   const handleDeleteItem = async (id) => {
     try {
@@ -357,6 +189,42 @@ const History = () => {
     }
   };
 
+  const startEditNote = (item) => {
+    setEditingNoteId(item.id);
+    setNoteInput(item.notes || '');
+  };
+
+  const handleSaveNote = async (id, newNote) => {
+    setIsSavingNote(true);
+    const trimmed = (newNote || '').trim();
+    try {
+      if (typeof api.history?.updateNote === 'function') {
+        await api.history.updateNote(id, trimmed);
+      }
+      setHistoryList((prev) =>
+        (prev || []).map((item) =>
+          item.id === id ? { ...item, notes: trimmed } : item
+        )
+      );
+      if (selectedItem?.id === id) {
+        setSelectedItem((prev) => (prev ? { ...prev, notes: trimmed } : null));
+      }
+      setEditingNoteId(null);
+      setNoteInput('');
+    } catch (err) {
+      console.error('Loi khi cap nhat ghi chu:', err);
+      alert('Khong the luu ghi chu. Vui long thu lai!');
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (id) => {
+    if (window.confirm('Ban co muon xoa ghi chu ky niem nay khong?')) {
+      await handleSaveNote(id, '');
+    }
+  };
+
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Vừa xong';
     const date = new Date(dateString);
@@ -382,6 +250,7 @@ const History = () => {
     const locProv = item.predictedLocation?.province || '';
     const locDanhHieu = item.predictedLocation?.danhHieu || '';
     const tags = Array.isArray(item.tags) ? item.tags : [];
+    const notes = item.notes || '';
 
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
@@ -389,7 +258,8 @@ const History = () => {
       const matchProv = locProv.toLowerCase().includes(q);
       const matchDanhHieu = locDanhHieu.toLowerCase().includes(q);
       const matchTags = tags.some((t) => typeof t === 'string' && t.toLowerCase().includes(q));
-      if (!matchName && !matchProv && !matchDanhHieu && !matchTags) return false;
+      const matchNotes = notes.toLowerCase().includes(q);
+      if (!matchName && !matchProv && !matchDanhHieu && !matchTags && !matchNotes) return false;
     }
 
     const now = new Date();
@@ -402,8 +272,10 @@ const History = () => {
     }
 
     const conf = parseFloat(item.confidence) || 0;
-    if (confidenceFilter === 'high' && conf < 98) return false;
-    if (confidenceFilter === 'medium' && (conf < 95 || conf >= 98)) return false;
+    if (confidenceFilter === 'very_high' && conf < 95) return false;
+    if (confidenceFilter === 'high' && (conf < 80 || conf >= 95)) return false;
+    if (confidenceFilter === 'medium' && (conf < 50 || conf >= 80)) return false;
+    if (confidenceFilter === 'low' && conf >= 50) return false;
 
     return true;
   });
@@ -419,7 +291,7 @@ const History = () => {
         ).toFixed(1)
       : '0.0';
 
-  const TOTAL_AI_LOCATIONS = 10;
+
   const uniqueLocationsCount = new Set(
     (historyList || [])
       .map((item) => item.predictedLocation?.id || item.predictedLocation?.name)
@@ -554,10 +426,10 @@ const History = () => {
                 <div className="text-2xl md:text-3xl font-extrabold text-white font-heading">{avgConfidence}%</div>
                 <div className="text-xs text-sky-100 font-medium">Độ tin cậy TB</div>
               </div>
-              <div className="px-3 text-center" title={`Đã khám phá ${uniqueLocationsCount} trên ${TOTAL_AI_LOCATIONS} địa danh AI hỗ trợ`}>
+              <div className="px-3 text-center" title={`Đã khám phá ${uniqueLocationsCount} trên ${totalLocations} địa danh AI hỗ trợ`}>
                 <div className="inline-flex items-center gap-1 text-emerald-300 font-bold text-sm">
                   <CheckCircle2 size={16} />
-                  <span>{uniqueLocationsCount}/{TOTAL_AI_LOCATIONS}</span>
+                  <span>{uniqueLocationsCount}/{totalLocations}</span>
                 </div>
                 <div className="text-xs text-sky-100 font-medium">Đã khám phá</div>
               </div>
@@ -619,8 +491,10 @@ const History = () => {
                   className="bg-transparent text-slate-700 font-medium text-sm focus:outline-none cursor-pointer"
                 >
                   <option value="all">Tất cả</option>
-                  <option value="high">Rất cao (&gt; 98%)</option>
-                  <option value="medium">Chuẩn (95% - 98%)</option>
+                  <option value="very_high">Rất cao (≥ 95%)</option>
+                  <option value="high">Cao (80% - 95%)</option>
+                  <option value="medium">Trung bình (50% - 80%)</option>
+                  <option value="low">Độ tin cậy thấp (&lt; 50%)</option>
                 </select>
               </div>
 
@@ -659,19 +533,24 @@ const History = () => {
         </div>
 
         {/* History Items Grid / List */}
-        {filteredList.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-200/80 shadow-sm">
+            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+            <p className="text-sm font-medium text-slate-500">Đang tải lịch sử nhận diện của bạn...</p>
+          </div>
+        ) : filteredList.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredList.map((item) => {
-              const locId = item.predictedLocation?.id || 1;
+              const locId = item.predictedLocation?.id || 'DD0001';
               const locName = item.predictedLocation?.name || 'Địa danh';
               const locProvince = item.predictedLocation?.province || 'Việt Nam';
-              const locInfo = LOCATION_INFO_MAP[locId] || LOCATION_INFO_BY_NAME[locName] || {};
-              const locDanhHieu = item.predictedLocation?.danhHieu || locInfo.danhHieu || 'Điểm đến du lịch';
+              const locDanhHieu = item.predictedLocation?.danhHieu || 'Điểm đến du lịch';
               const itemCategories = (Array.isArray(item.tags) && item.tags.length > 0)
                 ? item.tags
-                : (locInfo.loaiHinh || ['Thiên nhiên', 'Khám phá']);
-              const locThoiDiem = item.predictedLocation?.thoiDiemLyTuong || locInfo.thoiDiem || '';
-              const itemConfidence = parseFloat(item.confidence) || 98.5;
+                : ['Thiên nhiên', 'Khám phá'];
+              const locThoiDiem = item.predictedLocation?.thoiDiemLyTuong || '';
+              const itemConfidence = parseFloat(item.confidence) || 0;
+              const isLowConfidence = itemConfidence < 50;
 
               return (
                 <div
@@ -681,11 +560,13 @@ const History = () => {
                   {/* Image & Overlay Badges */}
                   <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                     <img
-                      src={resolveImageUrl(item.userUploadedImage, locId)}
+                      src={resolveImageUrl(item.userUploadedImage, item.fallbackImage)}
                       alt={locName}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src = LOCATION_FALLBACK_IMAGES[locId] || '/images/vinh_ha_long.jpg';
+                        if (item.fallbackImage && e.currentTarget.src !== resolveImageUrl(item.fallbackImage)) {
+                          e.currentTarget.src = resolveImageUrl(item.fallbackImage);
+                        }
                       }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
@@ -695,10 +576,17 @@ const History = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-black/20 pointer-events-none" />
 
                     {/* Confidence Badge */}
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-sky-700 shadow-md flex items-center gap-1.5 border border-sky-100">
-                      <Sparkles size={13} className="text-sky-500" />
-                      <span>Độ tin cậy: {itemConfidence}%</span>
-                    </div>
+                    {isLowConfidence ? (
+                      <div className="absolute top-3 left-3 bg-amber-50/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-amber-800 shadow-md flex items-center gap-1.5 border border-amber-300">
+                        <AlertTriangle size={13} className="text-amber-600 shrink-0" />
+                        <span>Độ tin cậy thấp: {itemConfidence}%</span>
+                      </div>
+                    ) : (
+                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-sky-700 shadow-md flex items-center gap-1.5 border border-sky-100">
+                        <Sparkles size={13} className="text-sky-500 shrink-0" />
+                        <span>Độ tin cậy: {itemConfidence}%</span>
+                      </div>
+                    )}
 
                     {/* Action Delete Single Item */}
                     <button
@@ -764,15 +652,59 @@ const History = () => {
                         </div>
                       )}
 
+                      {/* Ghi chú kỷ niệm */}
+                      {item.notes ? (
+                        <div className="mb-3.5 px-3 py-2 bg-amber-50/70 border border-amber-200/70 rounded-xl text-xs text-amber-900 flex items-start justify-between gap-2 group/note">
+                          <div className="flex items-start gap-1.5 flex-1 min-w-0">
+                            <PenLine size={13} className="text-amber-600 shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <span className="font-semibold text-[10px] uppercase tracking-wider text-amber-700 block">Kỷ niệm chuyến đi:</span>
+                              <p className="line-clamp-2 italic text-slate-700 leading-relaxed text-xs">{item.notes}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedItem(item);
+                              startEditNote(item);
+                            }}
+                            className="p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100/70 rounded transition-colors opacity-70 group-hover/note:opacity-100 shrink-0"
+                            title="Sửa ghi chú"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mb-3.5">
+                          <button
+                            onClick={() => {
+                              setSelectedItem(item);
+                              startEditNote(item);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-primary transition-colors py-1 px-2.5 rounded-lg hover:bg-sky-50 border border-dashed border-slate-200 w-full justify-center"
+                          >
+                            <PenLine size={12} />
+                            <span>Ghi lại kỷ niệm bức ảnh...</span>
+                          </button>
+                        </div>
+                      )}
+
                       {/* AI Confidence Progress Bar */}
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                      <div className={`p-3 rounded-xl border mb-4 ${isLowConfidence ? 'bg-amber-50/40 border-amber-200/80' : 'bg-slate-50 border-slate-100'}`}>
                         <div className="flex justify-between items-center text-xs mb-1">
-                          <span className="text-slate-500 font-medium">Độ khớp nhận diện</span>
-                          <span className="font-semibold text-primary">{itemConfidence}%</span>
+                          <span className="text-slate-500 font-medium">
+                            {isLowConfidence ? 'Độ khớp nhận diện (thấp)' : 'Độ khớp nhận diện'}
+                          </span>
+                          <span className={`font-semibold ${isLowConfidence ? 'text-amber-700' : 'text-primary'}`}>
+                            {itemConfidence}%
+                          </span>
                         </div>
                         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                           <div
-                            className="bg-gradient-to-r from-sky-500 to-primary h-full rounded-full transition-all duration-500"
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isLowConfidence 
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500' 
+                                : 'bg-gradient-to-r from-sky-500 to-primary'
+                            }`}
                             style={{ width: `${Math.min(100, Math.max(0, itemConfidence))}%` }}
                           />
                         </div>
@@ -891,87 +823,180 @@ const History = () => {
 
             {/* Modal Content */}
             <div className="p-6 space-y-6">
-              {/* Image Preview & Overview */}
-              <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <img
-                  src={resolveImageUrl(selectedItem.userUploadedImage, selectedItem.predictedLocation?.id)}
-                  alt={selectedItem.predictedLocation?.name || 'Địa danh'}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    const locId = selectedItem.predictedLocation?.id;
-                    e.currentTarget.src = (locId && LOCATION_FALLBACK_IMAGES[locId]) || '/images/vinh_ha_long.jpg';
-                  }}
-                  className="w-full sm:w-44 h-36 rounded-xl object-cover shadow-sm border border-white"
-                />
-                <div className="flex-1 space-y-2 text-center sm:text-left w-full">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-xs font-semibold">
-                    Dự đoán hàng đầu
-                  </span>
-                  <h4 className="text-2xl font-bold font-heading text-slate-800">
-                    {selectedItem.predictedLocation?.name || 'Địa danh'}
-                  </h4>
-                  <p className="text-sm text-slate-600 font-medium">
-                    {selectedItem.predictedLocation?.province || 'Việt Nam'} • {selectedItem.predictedLocation?.danhHieu || selectedItem.predictedLocation?.category || 'Điểm đến du lịch'}
-                  </p>
-                  <div className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1">
-                    <Clock size={13} />
-                    <span>Đã quét: {new Date(selectedItem.analyzedAt || Date.now()).toLocaleString('vi-VN')}</span>
-                  </div>
-                </div>
-              </div>
+              {(() => {
+                const selectedConf = parseFloat(selectedItem.confidence) || 0;
+                const isModalLowConfidence = selectedConf < 50;
 
-              {/* Top-K Probability Breakdown */}
-              <div>
-                <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <BarChart3 size={16} className="text-primary" />
-                  <span>Phân Bố Xác Suất Top-3 (Softmax Probability)</span>
-                </h4>
-                <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
-                  {(selectedItem.topPredictions || []).map((pred, idx) => {
-                    const predConf = parseFloat(pred?.confidence) || 0;
-                    return (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className={idx === 0 ? 'text-primary font-bold' : 'text-slate-600'}>
-                            #{idx + 1} {pred?.name || 'Địa danh'}
+                return (
+                  <>
+                    {/* Image Preview & Overview */}
+                    <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <img
+                        src={resolveImageUrl(selectedItem.userUploadedImage, selectedItem.fallbackImage)}
+                        alt={selectedItem.predictedLocation?.name || 'Địa danh'}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          if (selectedItem.fallbackImage && e.currentTarget.src !== resolveImageUrl(selectedItem.fallbackImage)) {
+                            e.currentTarget.src = resolveImageUrl(selectedItem.fallbackImage);
+                          }
+                        }}
+                        className="w-full sm:w-44 h-36 rounded-xl object-cover shadow-sm border border-white"
+                      />
+                      <div className="flex-1 space-y-2 text-center sm:text-left w-full">
+                        {isModalLowConfidence ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300">
+                            <AlertTriangle size={13} className="text-amber-600 shrink-0" />
+                            <span>Cảnh báo: Độ tin cậy thấp ({selectedConf}%)</span>
                           </span>
-                          <span className={idx === 0 ? 'text-primary font-bold' : 'text-slate-600'}>
-                            {predConf}%
+                        ) : (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-xs font-semibold">
+                            Dự đoán hàng đầu
                           </span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              idx === 0 ? 'bg-gradient-to-r from-sky-500 to-primary' : 'bg-slate-400'
-                            }`}
-                            style={{ width: `${Math.min(100, Math.max(0, predConf))}%` }}
-                          />
+                        )}
+                        <h4 className="text-2xl font-bold font-heading text-slate-800">
+                          {selectedItem.predictedLocation?.name || 'Địa danh'}
+                        </h4>
+                        <p className="text-sm text-slate-600 font-medium">
+                          {selectedItem.predictedLocation?.province || 'Việt Nam'} • {selectedItem.predictedLocation?.danhHieu || selectedItem.predictedLocation?.category || 'Điểm đến du lịch'}
+                        </p>
+                        <div className="text-xs text-slate-500 flex items-center justify-center sm:justify-start gap-1">
+                          <Clock size={13} />
+                          <span>Đã quét: {new Date(selectedItem.analyzedAt || Date.now()).toLocaleString('vi-VN')}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
 
-              {/* Technical Information */}
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block mb-1">Mạng nơ-ron:</span>
-                  <span className="font-semibold text-slate-800">{selectedItem.aiModel || 'ResNet50 (Transfer Learning)'}</span>
-                </div>
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block mb-1">Kích thước ảnh đầu vào:</span>
-                  <span className="font-semibold text-slate-800">224 × 224 pixels (RGB)</span>
-                </div>
-              </div>
+                    {/* Cảnh báo độ tin cậy thấp */}
+                    {isModalLowConfidence && (
+                      <div className="p-4 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-start gap-3 text-amber-900 text-xs leading-relaxed">
+                        <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-amber-800 text-sm">Độ tin cậy dưới ngưỡng khuyến nghị (50%)</p>
+                          <p className="text-amber-700 mt-1">
+                            Mô hình AI chỉ đạt độ khớp {selectedConf}%. Ảnh tải lên có thể không nằm trong 10 địa danh mẫu tại Việt Nam, hoặc hình ảnh có góc chụp bị khuất, thiếu sáng. Bạn có thể tham khảo thêm các địa danh khác trong Top-3 bên dưới.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-              {/* Note / Caption */}
-              {selectedItem.notes && (
-                <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 text-xs text-slate-600">
-                  <span className="font-semibold text-slate-700 block mb-1">Ghi chú chuyến đi:</span>
-                  {selectedItem.notes}
+                    {/* Top-K Probability Breakdown */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <BarChart3 size={16} className="text-primary" />
+                        <span>Phân Bố Xác Suất Top-3 (Softmax Probability)</span>
+                      </h4>
+                      <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-100">
+                        {(selectedItem.topPredictions || []).map((pred, idx) => {
+                          const predConf = parseFloat(pred?.confidence) || 0;
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between text-xs font-semibold">
+                                <span className={idx === 0 ? (isModalLowConfidence ? 'text-amber-800 font-bold' : 'text-primary font-bold') : 'text-slate-600'}>
+                                  #{idx + 1} {pred?.name || 'Địa danh'}
+                                </span>
+                                <span className={idx === 0 ? (isModalLowConfidence ? 'text-amber-800 font-bold' : 'text-primary font-bold') : 'text-slate-600'}>
+                                  {predConf}%
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    idx === 0
+                                      ? isModalLowConfidence
+                                        ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                                        : 'bg-gradient-to-r from-sky-500 to-primary'
+                                      : 'bg-slate-400'
+                                  }`}
+                                  style={{ width: `${Math.min(100, Math.max(0, predConf))}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
+
+
+              {/* Ghi chú & Kỷ niệm chuyến đi */}
+              <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
+                    <PenLine size={16} className="text-amber-700" />
+                    <span>Ghi chú & Kỷ niệm chuyến đi</span>
+                  </div>
+                  {editingNoteId !== selectedItem.id && (
+                    <button
+                      onClick={() => startEditNote(selectedItem)}
+                      className="text-xs font-semibold text-amber-700 hover:text-amber-900 inline-flex items-center gap-1 hover:underline"
+                    >
+                      <Edit2 size={12} />
+                      <span>{selectedItem.notes ? 'Chỉnh sửa' : 'Thêm ghi chú'}</span>
+                    </button>
+                  )}
                 </div>
-              )}
+
+                {editingNoteId === selectedItem.id ? (
+                  <div className="space-y-3 mt-2">
+                    <textarea
+                      value={noteInput}
+                      onChange={(e) => setNoteInput(e.target.value)}
+                      placeholder="Ghi lại cảm xúc, kỷ niệm của bức ảnh này (VD: Chụp lúc bình minh tại hồ, chuyến đi cùng gia đình, ăn đặc sản...)"
+                      rows={3}
+                      className="w-full p-3 rounded-xl border border-amber-300 bg-white text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all leading-relaxed"
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      {selectedItem.notes ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNote(selectedItem.id)}
+                          disabled={isSavingNote}
+                          className="text-xs font-medium text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Xóa ghi chú
+                        </button>
+                      ) : <span />}
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNoteId(null);
+                            setNoteInput('');
+                          }}
+                          disabled={isSavingNote}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-200/60 transition-colors"
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveNote(selectedItem.id, noteInput)}
+                          disabled={isSavingNote}
+                          className="btn-primary text-xs py-1.5 px-3.5 inline-flex items-center gap-1 rounded-lg shadow-sm"
+                        >
+                          <Check size={13} />
+                          <span>{isSavingNote ? 'Đang lưu...' : 'Lưu ghi chú'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {selectedItem.notes ? (
+                      <p className="text-slate-700 italic leading-relaxed text-xs bg-white/90 p-3 rounded-xl border border-amber-200/60">
+                        &ldquo;{selectedItem.notes}&rdquo;
+                      </p>
+                    ) : (
+                      <p className="text-slate-400 italic">
+                        Chưa có ghi chú nào cho bức ảnh này. Nhấn &quot;Thêm ghi chú&quot; để lưu lại những kỷ niệm đáng nhớ của bạn.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}

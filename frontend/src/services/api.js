@@ -162,6 +162,7 @@ export const api = {
     getAll: (params) => get('/history', params),
     delete: (id) => del(`/history/${id}`),
     clear: () => del('/history'),
+    updateNote: (id, ghiChu) => patch(`/history/${id}/note`, { ghiChu }),
   },
 
   // Admin
