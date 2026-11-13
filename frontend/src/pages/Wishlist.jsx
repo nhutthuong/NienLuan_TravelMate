@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Search, ChevronDown, Map, Compass, Hotel, LogIn, UserPlus, CheckCircle2 } from 'lucide-react';
+import { 
+  Heart, 
+  Search, 
+  ChevronDown, 
+  Map, 
+  Compass, 
+  Hotel, 
+  LogIn, 
+  UserPlus, 
+  CheckCircle2, 
+  Trash2, 
+  AlertTriangle 
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Footer from '../components/Footer';
@@ -8,129 +20,36 @@ import DestinationCard from '../components/explore/DestinationCard';
 import HotelCard from '../components/explore/HotelCard';
 import AttractionCard from '../components/location/AttractionCard';
 
-const MOCK_FAVORITES = [
-  {
-    id: 'DD0010',
-    maDiaDiem: 'DD0010',
-    type: 'location',
-    ten: 'Vịnh Hạ Long',
-    title: 'Vịnh Hạ Long',
-    tinhThanh: 'Quảng Ninh',
-    location: 'Quảng Ninh',
-    anhUrl: '/images/vinh_ha_long.jpg',
-    image: '/images/vinh_ha_long.jpg',
-    moTa: 'Di sản thiên nhiên thế giới UNESCO với hàng nghìn hòn đảo đá vôi và hang động thạch nhũ huyền ảo.',
-    loaiHinh: ['Thiên nhiên', 'Biển đảo', 'Di sản'],
-    dateAdded: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'KS0019',
-    maKhachSan: 'KS0019',
-    type: 'hotel',
-    ten: 'Vinpearl Resort & Spa Hạ Long',
-    title: 'Vinpearl Resort & Spa Hạ Long',
-    tenDiaDiem: 'Vịnh Hạ Long',
-    diaChi: 'Đảo Rều, Bãi Cháy, TP. Hạ Long, Quảng Ninh',
-    location: 'Hạ Long, Quảng Ninh',
-    anhDaiDien: '/images/vinh_ha_long.jpg',
-    image: '/images/vinh_ha_long.jpg',
-    soSao: 5.0,
-    diemDanhGia: 4.8,
-    soDanhGia: 3200,
-    giaThamKhao: 3120000,
-    donViTinh: '/đêm',
-    diemNoiBat: 'Khu nghỉ dưỡng 4 mặt hướng biển độc đáo',
-    tienNghi: ['Hồ bơi vô cực', 'Spa trị liệu', 'Bãi biển riêng'],
-    loaiHinh: ['Nghỉ dưỡng', 'Biển đảo'],
-    dateAdded: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'DD0006',
-    maDiaDiem: 'DD0006',
-    type: 'location',
-    ten: 'Quần thể danh thắng Tràng An',
-    title: 'Tràng An, Ninh Bình',
-    tinhThanh: 'Ninh Bình',
-    location: 'Ninh Bình',
-    anhUrl: '/images/trang_an.jpg',
-    image: '/images/trang_an.jpg',
-    moTa: 'Di sản văn hóa và thiên nhiên thế giới với hệ sinh thái đất ngập nước và những dãy núi đá vôi kỳ vĩ.',
-    loaiHinh: ['Thiên nhiên', 'Di sản', 'Văn hóa'],
-    dateAdded: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'KS0011',
-    maKhachSan: 'KS0011',
-    type: 'hotel',
-    ten: 'Emeralda Resort Ninh Bình',
-    title: 'Emeralda Resort Tam Cốc',
-    tenDiaDiem: 'Ninh Bình',
-    diaChi: 'Làng Tập Ninh, Gia Vân, Gia Viễn, Ninh Bình',
-    location: 'Ninh Bình',
-    anhDaiDien: '/images/trang_an.jpg',
-    image: '/images/trang_an.jpg',
-    soSao: 5.0,
-    diemDanhGia: 4.6,
-    soDanhGia: 5120,
-    giaThamKhao: 2350000,
-    donViTinh: '/đêm',
-    diemNoiBat: 'Không gian làng quê Bắc Bộ thanh bình',
-    tienNghi: ['Hồ bơi trong nhà & ngoài trời', 'Spa', 'Ẩm thực Bắc Bộ'],
-    loaiHinh: ['Nghỉ dưỡng', 'Sinh thái'],
-    dateAdded: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'TQ0011',
-    maDiemTQ: 'TQ0011',
-    type: 'checkin',
-    ten: 'Hang Múa',
-    title: 'Hang Múa',
-    tenDiaDiem: 'Ninh Bình',
-    diaChi: 'Khê Hạ, Ninh Xuân, Hoa Lư, Ninh Bình',
-    location: 'Ninh Bình',
-    anhDaiDien: '/images/trang_an.jpg',
-    image: '/images/trang_an.jpg',
-    diemDanhGia: 4.7,
-    soDanhGia: 4500,
-    giaVe: '100.000đ / người',
-    gioMoCua: '06:00 - 19:00',
-    diemNoiBat: 'Góc nhìn toàn cảnh Tam Cốc ngoạn mục từ đỉnh núi Ngọa Long',
-    loaiHinh: ['Khám phá', 'Mạo hiểm'],
-    dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'TQ0005',
-    maDiemTQ: 'TQ0005',
-    type: 'checkin',
-    ten: 'Cầu Vàng Bà Nà Hills',
-    title: 'Cầu Vàng',
-    tenDiaDiem: 'Đà Nẵng',
-    diaChi: 'Bà Nà Hills, Hòa Ninh, Hòa Vang, Đà Nẵng',
-    location: 'Bà Nà Hills, Đà Nẵng',
-    anhDaiDien: '/images/cau_vang.jpg',
-    image: '/images/cau_vang.jpg',
-    diemDanhGia: 4.8,
-    soDanhGia: 3100,
-    giaVe: 'Đã bao gồm trong vé cáp treo',
-    gioMoCua: '07:30 - 21:00',
-    diemNoiBat: 'Cây cầu độc đáo nâng đỡ bởi đôi bàn tay khổng lồ phủ rêu phong',
-    loaiHinh: ['Khám phá', 'Văn hóa'],
-    dateAdded: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+const resolveImageUrl = (url, fallbackUrl = '/images/vinh_ha_long.jpg') => {
+  if (!url || typeof url !== 'string' || url.trim() === '') return fallbackUrl;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  if (url.startsWith('/uploads/')) {
+    const backendOrigin = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : 'http://localhost:5000';
+    return `${backendOrigin}${url}`;
+  }
+  return url;
+};
 
 const Wishlist = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
-  const [favorites, setFavorites] = useState(MOCK_FAVORITES);
+  const [favorites, setFavorites] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [isLoading, setIsLoading] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.maNguoiDung) {
+      setIsLoading(true);
       api.wishlist
         .get()
         .then((res) => {
@@ -143,6 +62,7 @@ const Wishlist = () => {
             mapped.push({
               id: loc.maDiaDiem,
               maDiaDiem: loc.maDiaDiem,
+              maYeuThich: loc.maYeuThich,
               type: 'location',
               ten: locName,
               title: locName,
@@ -150,8 +70,8 @@ const Wishlist = () => {
               location: loc.tinhThanh || 'Việt Nam',
               danhHieu: loc.danhHieu,
               moTa: loc.moTa || '',
-              anhUrl: loc.anhUrl || loc.anh_url || '/images/vinh_ha_long.jpg',
-              image: loc.anhUrl || loc.anh_url || '/images/vinh_ha_long.jpg',
+              anhUrl: resolveImageUrl(loc.anhUrl || loc.anh_url, '/images/vinh_ha_long.jpg'),
+              image: resolveImageUrl(loc.anhUrl || loc.anh_url, '/images/vinh_ha_long.jpg'),
               loaiHinh: loc.loaiHinh || [],
               isFavorited: true,
               dateAdded: loc.createdAt || loc.ngayLuu || new Date().toISOString(),
@@ -164,6 +84,7 @@ const Wishlist = () => {
               id: att.maDiemTQ,
               maDiemTQ: att.maDiemTQ,
               maDiaDiem: att.maDiaDiem,
+              maYeuThich: att.maYeuThich,
               type: 'checkin',
               ten: attName,
               title: attName,
@@ -175,8 +96,8 @@ const Wishlist = () => {
               gioMoCua: att.gioMoCua || 'Mở cửa cả ngày',
               tenDiaDiem: att.tenDiaDiem || att.tinhThanh,
               tinhThanh: att.tinhThanh,
-              anhDaiDien: att.anhDaiDien || att.anhUrl || '/images/cau_vang.jpg',
-              image: att.anhDaiDien || att.anhUrl || '/images/cau_vang.jpg',
+              anhDaiDien: resolveImageUrl(att.anhDaiDien || att.anhUrl, '/images/cau_vang.jpg'),
+              image: resolveImageUrl(att.anhDaiDien || att.anhUrl, '/images/cau_vang.jpg'),
               diemDanhGia: parseFloat(att.diemDanhGia || att.danhGiaTB || 5.0),
               rating: parseFloat(att.diemDanhGia || att.danhGiaTB || 5.0),
               soDanhGia: att.soDanhGia || att.soLuotDanhGia || 0,
@@ -192,6 +113,7 @@ const Wishlist = () => {
             mapped.push({
               id: hotel.maKhachSan,
               maKhachSan: hotel.maKhachSan,
+              maYeuThich: hotel.maYeuThich,
               type: 'hotel',
               ten: hotelName,
               title: hotelName,
@@ -204,8 +126,9 @@ const Wishlist = () => {
               diemNoiBat: hotel.diemNoiBat || '',
               bookingUrl: hotel.bookingUrl,
               tenDiaDiem: hotel.tenDiaDiem,
-              anhDaiDien: hotel.anhDaiDien || hotel.anhUrl || '/images/vinh_ha_long.jpg',
-              image: hotel.anhDaiDien || hotel.anhUrl || '/images/vinh_ha_long.jpg',
+              tinhThanh: hotel.tinhThanh,
+              anhDaiDien: resolveImageUrl(hotel.anhDaiDien || hotel.anhUrl, '/images/vinh_ha_long.jpg'),
+              image: resolveImageUrl(hotel.anhDaiDien || hotel.anhUrl, '/images/vinh_ha_long.jpg'),
               diemDanhGia: parseFloat(hotel.diemDanhGia || hotel.danhGiaTB || 4.8),
               rating: parseFloat(hotel.diemDanhGia || hotel.danhGiaTB || 4.8),
               soDanhGia: hotel.soDanhGia || hotel.soLuotDanhGia || 0,
@@ -217,21 +140,28 @@ const Wishlist = () => {
             });
           });
 
-          if (mapped.length > 0) {
-            setFavorites(mapped);
-          } else {
+          setFavorites(mapped);
+        })
+        .catch((err) => {
+          console.error('Loi khi tai danh sach yeu thich:', err);
+          if (isMounted) {
             setFavorites([]);
           }
         })
-        .catch(() => {
-          // If error or unauthenticated, keep mock data
+        .finally(() => {
+          if (isMounted) {
+            setIsLoading(false);
+          }
         });
+    } else {
+      setFavorites([]);
+      setIsLoading(false);
     }
 
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.maNguoiDung]);
 
   let processedFavorites = favorites.filter((item) => {
     if (filter !== 'all' && item.type !== filter) return false;
@@ -257,25 +187,46 @@ const Wishlist = () => {
     return new Date(b.dateAdded) - new Date(a.dateAdded);
   });
 
-  const removeFavorite = async (item) => {
-    const targetId = item.maDiaDiem || item.maDiemTQ || item.maKhachSan || item.id;
+  const confirmRemoveFavorite = async () => {
+    if (!itemToDelete) return;
+    const item = itemToDelete;
+    setIsDeleting(true);
+
     try {
       if (isAuthenticated) {
-        let payload = {};
-        if (item.type === 'location') payload = { maDiaDiem: targetId };
-        else if (item.type === 'checkin') payload = { maDiemTQ: targetId };
-        else if (item.type === 'hotel') payload = { maKhachSan: targetId };
-        await api.wishlist.toggle(payload);
+        const payload = {};
+        if (item.maYeuThich) payload.maYeuThich = item.maYeuThich;
+        if (item.type === 'location') payload.maDiaDiem = item.maDiaDiem || item.id;
+        else if (item.type === 'checkin') payload.maDiemTQ = item.maDiemTQ || item.id;
+        else if (item.type === 'hotel') payload.maKhachSan = item.maKhachSan || item.id;
+
+        await api.wishlist.remove(payload);
       }
+
+      setFavorites((prev) =>
+        prev.filter((i) => {
+          if (item.maYeuThich && i.maYeuThich) {
+            return i.maYeuThich !== item.maYeuThich;
+          }
+          if (item.type === 'location') {
+            return !(i.type === 'location' && (i.maDiaDiem === item.maDiaDiem || i.id === item.id));
+          }
+          if (item.type === 'checkin') {
+            return !(i.type === 'checkin' && (i.maDiemTQ === item.maDiemTQ || i.id === item.id));
+          }
+          if (item.type === 'hotel') {
+            return !(i.type === 'hotel' && (i.maKhachSan === item.maKhachSan || i.id === item.id));
+          }
+          return true;
+        })
+      );
+      setItemToDelete(null);
     } catch (err) {
       console.error('Loi khi xoa khoi wishlist:', err);
+      alert('Không thể xóa mục khỏi danh sách yêu thích. Vui lòng thử lại!');
+    } finally {
+      setIsDeleting(false);
     }
-    setFavorites((prev) =>
-      prev.filter((i) => {
-        const iId = i.maDiaDiem || i.maDiemTQ || i.maKhachSan || i.id;
-        return !(iId === targetId && i.type === item.type);
-      })
-    );
   };
 
   const countAll = favorites.length;
@@ -312,7 +263,7 @@ const Wishlist = () => {
                 <DestinationCard
                   key={key}
                   destination={item}
-                  onRemove={removeFavorite}
+                  onRemove={(targetItem) => setItemToDelete(targetItem)}
                   onNavigate={(id) => navigate(`/location/${id}`)}
                 />
               );
@@ -322,7 +273,7 @@ const Wishlist = () => {
                 <HotelCard
                   key={key}
                   hotel={item}
-                  onRemove={removeFavorite}
+                  onRemove={(targetItem) => setItemToDelete(targetItem)}
                   onNavigate={(id) => navigate(`/service/hotel/${id}`)}
                 />
               );
@@ -332,7 +283,7 @@ const Wishlist = () => {
                 <AttractionCard
                   key={key}
                   spot={item}
-                  onRemove={removeFavorite}
+                  onRemove={(targetItem) => setItemToDelete(targetItem)}
                   onNavigate={(id) => navigate(`/service/attraction/${id}`)}
                 />
               );
@@ -570,7 +521,12 @@ const Wishlist = () => {
 
             {/* Main Content (Right) */}
             <div className="w-full lg:flex-1 min-w-0">
-              {processedFavorites.length > 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="w-10 h-10 border-4 border-sky-600 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-slate-600 font-medium text-base">Đang tải danh sách yêu thích của bạn...</p>
+                </div>
+              ) : processedFavorites.length > 0 ? (
                 <>
                   {(filter === 'all' || filter === 'location') && renderGrid(locations, 'location')}
                   {(filter === 'all' || filter === 'hotel') && renderGrid(hotels, 'hotel')}
@@ -595,6 +551,76 @@ const Wishlist = () => {
           </div>
         </div>
       </div>
+
+      {/* MODAL: Xác nhận xóa khỏi danh sách yêu thích */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center">
+            <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
+              <Trash2 size={26} />
+            </div>
+
+            <h4 className="text-xl font-bold text-slate-900 mb-2">
+              Xóa khỏi danh sách yêu thích?
+            </h4>
+
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
+              Bạn có chắc chắn muốn xóa{' '}
+              <span className="font-semibold text-slate-800">
+                "{itemToDelete.ten || itemToDelete.title || 'mục này'}"
+              </span>{' '}
+              khỏi danh sách yêu thích không?
+            </p>
+
+            {/* Mini preview card */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80 mb-6 text-left">
+              <img
+                src={itemToDelete.anhUrl || itemToDelete.anhDaiDien || itemToDelete.image || '/images/vinh_ha_long.jpg'}
+                alt=""
+                className="w-12 h-12 rounded-lg object-cover shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <h5 className="text-sm font-semibold text-slate-800 truncate">
+                  {itemToDelete.ten || itemToDelete.title}
+                </h5>
+                <p className="text-xs text-slate-500 truncate">
+                  {itemToDelete.tinhThanh || itemToDelete.diaChi || itemToDelete.location || 'Việt Nam'}
+                </p>
+              </div>
+              <span className="text-xs font-semibold px-2 py-1 bg-white border border-slate-200 rounded-md text-slate-600 shrink-0">
+                {itemToDelete.type === 'location' ? 'Địa điểm' : itemToDelete.type === 'hotel' ? 'Khách sạn' : 'Điểm check-in'}
+              </span>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => !isDeleting && setItemToDelete(null)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={confirmRemoveFavorite}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Đồng ý xóa</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

@@ -25,6 +25,31 @@ const toggleWishlist = async (req, res) => {
       maDiaDiem: maDiaDiem || null,
       maDiemTQ: maDiemTQ || null,
       maKhachSan: maKhachSan || null,
+      maYeuThich: req.body.maYeuThich || null,
+    });
+
+    return res.status(200).json(result);
+  } catch (err) {
+    return res.status(500).json({ message: `Loi may chu: ${err.message}` });
+  }
+};
+
+const removeWishlist = async (req, res) => {
+  try {
+    const currentUserId = req.user.maNguoiDung;
+    const { maDiaDiem, maDiemTQ, maKhachSan, maYeuThich } = req.body;
+
+    if (!maDiaDiem && !maDiemTQ && !maKhachSan && !maYeuThich) {
+      return res.status(400).json({
+        message: 'Vui long truyen thong tin muc can xoa khoi danh sach yeu thich',
+      });
+    }
+
+    const result = await interactionModel.removeFromWishlist(currentUserId, {
+      maDiaDiem: maDiaDiem || null,
+      maDiemTQ: maDiemTQ || null,
+      maKhachSan: maKhachSan || null,
+      maYeuThich: maYeuThich || null,
     });
 
     return res.status(200).json(result);
@@ -112,6 +137,7 @@ const updateHistoryNote = async (req, res) => {
 module.exports = {
   getWishlist,
   toggleWishlist,
+  removeWishlist,
   getHistory,
   deleteHistory,
   clearHistory,

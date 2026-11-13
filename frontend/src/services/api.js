@@ -156,6 +156,7 @@ export const api = {
   wishlist: {
     get: () => get('/wishlist'),
     toggle: (payload) => post('/wishlist/toggle', payload),
+    remove: (payload) => post('/wishlist/remove', payload),
   },
   history: {
     get: (params) => get('/history', params),

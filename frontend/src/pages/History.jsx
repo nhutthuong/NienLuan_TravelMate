@@ -53,6 +53,9 @@ const History = () => {
   const [confidenceFilter, setConfidenceFilter] = useState('all');
   const [selectedItem, setSelectedItem] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [deleteNoteConfirmId, setDeleteNoteConfirmId] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteInput, setNoteInput] = useState('');
   const [isSavingNote, setIsSavingNote] = useState(false);
@@ -63,6 +66,8 @@ const History = () => {
     // Reset modals and state immediately when user context changes or logs out
     setSelectedItem(null);
     setDeleteConfirmId(null);
+    setShowClearAllModal(false);
+    setDeleteNoteConfirmId(null);
 
     if (!isAuthenticated || !user?.maNguoiDung) {
       setHistoryList([]);
@@ -175,17 +180,24 @@ const History = () => {
     setDeleteConfirmId(null);
   };
 
-  const handleClearAll = async () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử quét nhận diện không?')) {
-      try {
-        if (isAuthenticated && typeof api.history?.clear === 'function') {
-          await api.history.clear();
-        }
-      } catch (err) {
-        console.error('Loi khi xoa tat ca lich su:', err);
+  const handleClearAll = () => {
+    setShowClearAllModal(true);
+  };
+
+  const handleConfirmClearAll = async () => {
+    setIsClearingAll(true);
+    try {
+      if (isAuthenticated && typeof api.history?.clear === 'function') {
+        await api.history.clear();
       }
       setHistoryList([]);
       setSelectedItem(null);
+      setShowClearAllModal(false);
+    } catch (err) {
+      console.error('Loi khi xoa tat ca lich su:', err);
+      alert('Không thể xóa toàn bộ lịch sử. Vui lòng thử lại!');
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
@@ -219,10 +231,14 @@ const History = () => {
     }
   };
 
-  const handleDeleteNote = async (id) => {
-    if (window.confirm('Ban co muon xoa ghi chu ky niem nay khong?')) {
-      await handleSaveNote(id, '');
-    }
+  const handleDeleteNote = (id) => {
+    setDeleteNoteConfirmId(id);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!deleteNoteConfirmId) return;
+    await handleSaveNote(deleteNoteConfirmId, '');
+    setDeleteNoteConfirmId(null);
   };
 
   const formatTimeAgo = (dateString) => {
@@ -1032,24 +1048,113 @@ const History = () => {
       {/* MODAL: Xác nhận xóa 1 mục */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-100 text-center">
-            <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <AlertCircle size={24} />
+          <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center animate-scaleUp">
+            <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-sm">
+              <Trash2 size={26} />
             </div>
-            <h4 className="text-base font-bold text-slate-800 mb-2">Xóa mục lịch sử này?</h4>
-            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              Hành động này sẽ xóa vĩnh viễn hình ảnh và kết quả nhận diện đã lưu khỏi tài khoản của bạn.
+            <h4 className="text-xl font-bold text-slate-900 mb-2 font-heading">
+              Xóa mục lịch sử này?
+            </h4>
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              Hành động này sẽ xóa vĩnh viễn hình ảnh đã tải lên và kết quả phân tích AI này khỏi tài khoản của bạn.
             </p>
             <div className="flex gap-3 justify-center">
               <button
+                type="button"
                 onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
               >
                 Hủy bỏ
               </button>
               <button
+                type="button"
                 onClick={() => handleDeleteItem(deleteConfirmId)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
+              >
+                Đồng ý xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Xác nhận xóa toàn bộ lịch sử (Tailwind UI) */}
+      {showClearAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm sm:max-w-md w-full p-6 shadow-2xl border border-slate-100 text-center animate-scaleUp">
+            <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100 shadow-inner">
+              <Trash2 size={26} />
+            </div>
+
+            <h4 className="text-xl font-bold text-slate-900 mb-2 font-heading">
+              Xác nhận xóa toàn bộ lịch sử?
+            </h4>
+
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
+              Bạn có chắc chắn muốn xóa toàn bộ{' '}
+              <span className="font-semibold text-slate-800">{historyList.length} lượt quét</span>{' '}
+              khỏi lịch sử nhận diện AI không?
+            </p>
+
+            <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-xl mb-6 text-left flex items-start gap-2.5">
+              <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <span className="text-xs text-amber-800 leading-relaxed font-medium">
+                Toàn bộ ảnh chụp và thông tin ghi chú liên quan sẽ được xóa sạch khỏi bộ nhớ máy chủ và không thể hoàn tác.
+              </span>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => !isClearingAll && setShowClearAllModal(false)}
+                disabled={isClearingAll}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearAll}
+                disabled={isClearingAll}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isClearingAll ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xóa toàn bộ</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Xác nhận xóa ghi chú kỷ niệm */}
+      {deleteNoteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center animate-scaleUp">
+            <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mx-auto mb-3 border border-rose-100 shadow-sm">
+              <Trash2 size={22} />
+            </div>
+            <h4 className="text-base font-bold text-slate-900 mb-2">Xóa ghi chú kỷ niệm?</h4>
+            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+              Bạn có chắc chắn muốn xóa dòng ghi chú kỷ niệm đã lưu cho bức ảnh này không?
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => setDeleteNoteConfirmId(null)}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteNote}
+                className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
                 Đồng ý xóa
               </button>

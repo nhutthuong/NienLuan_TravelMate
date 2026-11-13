@@ -105,7 +105,7 @@ const getWishlist = async (maNguoiDung) => {
     LEFT JOIN KhachSan_LoaiHinh kl ON ks.makhachsan = kl.makhachsan
     LEFT JOIN LoaiHinhDuLich lh ON kl.maloaihinh = lh.maloaihinh
     WHERE y.manguoidung = $1
-    GROUP BY y.mayeuthich, ks.makhachsan, ks.madiadiem, ks.ten, ks.sosao, ks.diachi, ks.mota, ks.giathamkhao, ks.diemnoibat, ks.donvitinh, ks.booking_url, d.ten, y.created_at
+    GROUP BY y.mayeuthich, ks.makhachsan, ks.madiadiem, ks.ten, ks.sosao, ks.diachi, ks.mota, ks.giathamkhao, ks.diemnoibat, ks.donvitinh, ks.booking_url, d.ten, d.tinhthanh, y.created_at
     ORDER BY y.created_at DESC
   `;
 
@@ -174,21 +174,24 @@ const getWishlist = async (maNguoiDung) => {
   };
 };
 
-const toggleWishlist = async (maNguoiDung, { maDiaDiem = null, maDiemTQ = null, maKhachSan = null }) => {
+const toggleWishlist = async (maNguoiDung, { maDiaDiem = null, maDiemTQ = null, maKhachSan = null, maYeuThich = null }) => {
   let checkSql = '';
   let checkParams = [maNguoiDung];
 
-  if (maDiaDiem) {
-    checkSql = 'SELECT mayeuthich FROM YeuThich WHERE manguoidung = $1 AND madiadiem = $2';
-    checkParams.push(maDiaDiem);
+  if (maYeuThich) {
+    checkSql = 'SELECT mayeuthich FROM YeuThich WHERE manguoidung = $1 AND mayeuthich = $2';
+    checkParams.push(maYeuThich);
   } else if (maDiemTQ) {
     checkSql = 'SELECT mayeuthich FROM YeuThich WHERE manguoidung = $1 AND madiemtq = $2';
     checkParams.push(maDiemTQ);
   } else if (maKhachSan) {
     checkSql = 'SELECT mayeuthich FROM YeuThich WHERE manguoidung = $1 AND makhachsan = $2';
     checkParams.push(maKhachSan);
+  } else if (maDiaDiem) {
+    checkSql = 'SELECT mayeuthich FROM YeuThich WHERE manguoidung = $1 AND madiadiem = $2';
+    checkParams.push(maDiaDiem);
   } else {
-    throw new Error('Can truyen maDiaDiem, maDiemTQ hoac maKhachSan de yeu thich');
+    throw new Error('Can truyen maDiaDiem, maDiemTQ, maKhachSan hoac maYeuThich de yeu thich');
   }
 
   const existingRes = await query(checkSql, checkParams);
@@ -205,6 +208,38 @@ const toggleWishlist = async (maNguoiDung, { maDiaDiem = null, maDiemTQ = null, 
   `;
   await query(insertSql, [maNguoiDung, maDiaDiem, maDiemTQ, maKhachSan]);
   return { isFavorited: true };
+};
+
+const removeFromWishlist = async (maNguoiDung, { maDiaDiem = null, maDiemTQ = null, maKhachSan = null, maYeuThich = null }) => {
+  if (maYeuThich) {
+    const res = await query(
+      'DELETE FROM YeuThich WHERE manguoidung = $1 AND mayeuthich = $2 RETURNING mayeuthich',
+      [maNguoiDung, maYeuThich]
+    );
+    return { success: true, isFavorited: false, count: res.rowCount };
+  }
+  if (maDiemTQ) {
+    const res = await query(
+      'DELETE FROM YeuThich WHERE manguoidung = $1 AND madiemtq = $2 RETURNING mayeuthich',
+      [maNguoiDung, maDiemTQ]
+    );
+    return { success: true, isFavorited: false, count: res.rowCount };
+  }
+  if (maKhachSan) {
+    const res = await query(
+      'DELETE FROM YeuThich WHERE manguoidung = $1 AND makhachsan = $2 RETURNING mayeuthich',
+      [maNguoiDung, maKhachSan]
+    );
+    return { success: true, isFavorited: false, count: res.rowCount };
+  }
+  if (maDiaDiem) {
+    const res = await query(
+      'DELETE FROM YeuThich WHERE manguoidung = $1 AND madiadiem = $2 RETURNING mayeuthich',
+      [maNguoiDung, maDiaDiem]
+    );
+    return { success: true, isFavorited: false, count: res.rowCount };
+  }
+  throw new Error('Can truyen maDiaDiem, maDiemTQ, maKhachSan hoac maYeuThich de xoa yeu thich');
 };
 
 // ================= 2. LICH SU TIM KIEM AI =================
@@ -565,6 +600,7 @@ const deleteReview = async (type, id) => {
 module.exports = {
   getWishlist,
   toggleWishlist,
+  removeFromWishlist,
   saveSearchHistory,
   getSearchHistory,
   deleteSearchHistory,
