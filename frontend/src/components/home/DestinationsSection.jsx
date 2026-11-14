@@ -30,24 +30,28 @@ const DestinationsSection = ({ destinations }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
         {destinations.map((dest, index) => (
           <Link
-            to={dest.id ? `/location/${dest.id}` : "/explore"}
+            to={dest.id || dest.maDiaDiem ? `/location/${dest.id || dest.maDiaDiem}` : "/explore"}
             className="bg-white rounded-xl shadow-sm border border-slate-200 hover:-translate-y-1 hover:shadow-lg hover:border-primary transition-all cursor-pointer flex flex-col overflow-hidden group"
-            key={dest.id || index}
+            key={dest.id || dest.maDiaDiem || index}
           >
-            <div className="h-40 w-full overflow-hidden">
+            <div className="h-40 w-full overflow-hidden bg-slate-100">
               <img
-                src={dest.image}
-                alt={dest.name}
+                src={dest.image || dest.anhUrl || '/images/vinh_ha_long.jpg'}
+                alt={dest.name || dest.ten || 'Địa danh'}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/images/vinh_ha_long.jpg';
+                }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
             <div className="p-4 flex-1 flex flex-col">
               <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-primary transition-colors">
-                {dest.name}
+                {dest.name || dest.ten}
               </h3>
               <div className="text-sm text-slate-500 flex flex-col gap-1 mt-1">
-                <span>{dest.location}</span>
-                <span className="text-slate-400">{dest.category}</span>
+                <span>{dest.location || dest.tinhThanh}</span>
+                <span className="text-slate-400">{dest.category || dest.danhHieu || ''}</span>
               </div>
             </div>
           </Link>

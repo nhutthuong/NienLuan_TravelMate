@@ -12,6 +12,7 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const { cleanupUnusedAvatars } = require('./utils/avatarStorage');
+const { cleanupAllUnusedLocationImages } = require('./utils/locationStorage');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +20,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'TravelMate Backend is running' });
@@ -47,6 +49,9 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Backend server is running on port ${PORT}`);
     cleanupUnusedAvatars().catch((err) => {
       console.error('[Avatar Cleanup] Loi khi khoi dong:', err.message);
+    });
+    cleanupAllUnusedLocationImages().catch((err) => {
+      console.error('[Location Image Cleanup] Loi khi khoi dong:', err.message);
     });
   });
 }

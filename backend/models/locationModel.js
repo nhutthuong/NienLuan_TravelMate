@@ -219,6 +219,9 @@ const createLocation = async (data, maLoaiHinhList = []) => {
   try {
     await client.query('BEGIN');
 
+    const viDo = (data.viDo !== undefined && data.viDo !== '' && data.viDo !== null) ? parseFloat(data.viDo) : null;
+    const kinhDo = (data.kinhDo !== undefined && data.kinhDo !== '' && data.kinhDo !== null) ? parseFloat(data.kinhDo) : null;
+
     const insertSql = `
       INSERT INTO DiaDiem (ten, tinhthanh, danhhieu, mota, vido, kinhdo, quymo, thoidiemlytuong, anh_url)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -229,8 +232,8 @@ const createLocation = async (data, maLoaiHinhList = []) => {
       data.tinhThanh,
       data.danhHieu || null,
       data.moTa || null,
-      data.viDo || null,
-      data.kinhDo || null,
+      viDo,
+      kinhDo,
       data.quyMo || null,
       data.thoiDiemLyTuong || null,
       data.anhUrl,
@@ -262,30 +265,33 @@ const updateLocation = async (maDiaDiem, data, maLoaiHinhList = null) => {
   try {
     await client.query('BEGIN');
 
+    const viDo = (data.viDo !== undefined && data.viDo !== '' && data.viDo !== null) ? parseFloat(data.viDo) : null;
+    const kinhDo = (data.kinhDo !== undefined && data.kinhDo !== '' && data.kinhDo !== null) ? parseFloat(data.kinhDo) : null;
+
     const updateSql = `
       UPDATE DiaDiem
       SET ten = COALESCE($1, ten),
           tinhthanh = COALESCE($2, tinhthanh),
-          danhhieu = COALESCE($3, danhhieu),
-          mota = COALESCE($4, mota),
-          vido = COALESCE($5, vido),
-          kinhdo = COALESCE($6, kinhdo),
-          quymo = COALESCE($7, quymo),
-          thoidiemlytuong = COALESCE($8, thoidiemlytuong),
+          danhhieu = $3,
+          mota = $4,
+          vido = $5,
+          kinhdo = $6,
+          quymo = $7,
+          thoidiemlytuong = $8,
           anh_url = COALESCE($9, anh_url)
       WHERE madiadiem = $10
       RETURNING *
     `;
     const res = await client.query(updateSql, [
-      data.ten,
-      data.tinhThanh,
-      data.danhHieu,
-      data.moTa,
-      data.viDo,
-      data.kinhDo,
-      data.quyMo,
-      data.thoiDiemLyTuong,
-      data.anhUrl,
+      data.ten !== undefined ? data.ten : null,
+      data.tinhThanh !== undefined ? data.tinhThanh : null,
+      data.danhHieu !== undefined ? data.danhHieu : null,
+      data.moTa !== undefined ? data.moTa : null,
+      viDo,
+      kinhDo,
+      data.quyMo !== undefined ? data.quyMo : null,
+      data.thoiDiemLyTuong !== undefined ? data.thoiDiemLyTuong : null,
+      data.anhUrl !== undefined ? data.anhUrl : null,
       maDiaDiem,
     ]);
 

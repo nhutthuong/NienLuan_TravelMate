@@ -27,6 +27,9 @@ const Home = () => {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
 
+  // 10 Dia danh tieu bieu dong bo truc tiep tu Database
+  const [featuredDestinations, setFeaturedDestinations] = useState(ORIGINAL_DESTINATIONS);
+
   const handleToggleCategory = (catId) => {
     setSelectedCategories((prev) =>
       prev.includes(catId)
@@ -43,9 +46,11 @@ const Home = () => {
     setSelectedCategories([]);
   };
 
-  // Load danh muc tu Database cho Tab 2
+  // Load danh muc tu Database cho Tab 2 va 10 dia danh tieu bieu tu CSDL
   useEffect(() => {
     let isMounted = true;
+
+    // Load danh muc
     api.locations
       .getCategories()
       .then((res) => {
@@ -54,6 +59,34 @@ const Home = () => {
         }
       })
       .catch(() => {});
+
+    // Load thong tin & hinh anh moi nhat tu CSDL cho 10 dia danh
+    api.locations
+      .getAll()
+      .then((res) => {
+        if (!isMounted || !Array.isArray(res) || res.length === 0) return;
+
+        const merged = ORIGINAL_DESTINATIONS.map((orig) => {
+          const dbLoc = res.find(
+            (d) => String(d.maDiaDiem || d.id).toUpperCase() === String(orig.id).toUpperCase()
+          );
+          if (!dbLoc) return orig;
+
+          return {
+            ...orig,
+            id: dbLoc.maDiaDiem || orig.id,
+            name: orig.name || dbLoc.ten,
+            location: dbLoc.tinhThanh || orig.location,
+            category: orig.category || dbLoc.danhHieu || (Array.isArray(dbLoc.loaiHinh) ? dbLoc.loaiHinh[0] : ''),
+            image: dbLoc.anhUrl || dbLoc.anh_url || orig.image,
+          };
+        });
+
+        setFeaturedDestinations(merged);
+      })
+      .catch((err) => {
+        console.warn("Could not fetch locations from DB for Home:", err);
+      });
 
     return () => {
       isMounted = false;
@@ -209,7 +242,7 @@ const Home = () => {
       </section>
 
       {/* 10 Destinations Section */}
-      <DestinationsSection destinations={ORIGINAL_DESTINATIONS} />
+      <DestinationsSection destinations={featuredDestinations} />
 
       {/* CTA Banner */}
       <HomeCtaBanner />

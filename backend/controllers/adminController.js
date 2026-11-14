@@ -1,8 +1,11 @@
+const path = require('path');
+const fs = require('fs');
 const userModel = require('../models/userModel');
 const locationModel = require('../models/locationModel');
 const attractionModel = require('../models/attractionModel');
 const hotelModel = require('../models/hotelModel');
 const interactionModel = require('../models/interactionModel');
+const { deleteLocationImageFile, cleanupAllUnusedLocationImages } = require('../utils/locationStorage');
 
 // 1. Thong ke tong quan
 const getStats = async (req, res) => {
@@ -80,10 +83,21 @@ const updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
     const { maLoaiHinhList, ...data } = req.body;
+
+    // Lấy thông tin địa danh cũ trước khi cập nhật để kiểm tra ảnh cũ
+    const oldLoc = await locationModel.getById(id);
+    const oldImageUrl = oldLoc?.anhUrl;
+
     const updated = await locationModel.updateLocation(id, data, maLoaiHinhList);
     if (!updated) {
       return res.status(404).json({ message: 'Khong tim thay dia diem can cap nhat' });
     }
+
+    // Nếu ảnh thay đổi, kiểm tra và xóa file ảnh cũ nếu không còn bất kỳ địa danh nào khác sử dụng
+    if (oldImageUrl && data.anhUrl && oldImageUrl !== data.anhUrl) {
+      await deleteLocationImageFile(oldImageUrl);
+    }
+
     return res.status(200).json({ message: 'Cap nhat dia diem thanh cong', data: updated });
   } catch (err) {
     return res.status(500).json({ message: `Loi may chu: ${err.message}` });
@@ -93,10 +107,21 @@ const updateLocation = async (req, res) => {
 const deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Lấy thông tin địa danh trước khi xóa để kiểm tra ảnh
+    const locToDelete = await locationModel.getById(id);
+    const oldImageUrl = locToDelete?.anhUrl;
+
     const deleted = await locationModel.deleteLocation(id);
     if (!deleted) {
       return res.status(404).json({ message: 'Khong tim thay dia diem can xoa' });
     }
+
+    // Nếu xóa thành công, kiểm tra xóa file ảnh nếu không còn địa danh nào dùng
+    if (oldImageUrl) {
+      await deleteLocationImageFile(oldImageUrl);
+    }
+
     return res.status(200).json({ message: 'Xoa dia diem thanh cong' });
   } catch (err) {
     if (err.statusCode === 409 || (err.message && err.message.includes('mo hinh AI'))) {
@@ -351,6 +376,48 @@ const uploadImage = async (req, res) => {
   }
 };
 
+// 9. Upload anh rieng cho Dia danh (Luu vao public/images de Vite phuc vu truc tiep)
+const uploadLocationImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Vui long tai len tep anh' });
+    }
+    const filename = req.file.filename;
+    const url = `/images/${filename}`;
+
+    // Dong bo sang dist/images neu co thu muc dist
+    const distDir = path.resolve(__dirname, '../../frontend/dist/images');
+    if (fs.existsSync(distDir)) {
+      try {
+        fs.copyFileSync(req.file.path, path.join(distDir, filename));
+      } catch (copyErr) {
+        console.warn('[Upload Location Image] Khong the sao chep sang dist:', copyErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      url,
+      filename,
+      message: 'Tai anh dia danh len thanh cong'
+    });
+  } catch (err) {
+    return res.status(500).json({ message: `Loi may chu: ${err.message}` });
+  }
+};
+
+// 10. Don dep toan bo anh dia danh khong con su dung
+const cleanupLocationImages = async (req, res) => {
+  try {
+    const deletedCount = await cleanupAllUnusedLocationImages();
+    return res.status(200).json({
+      message: `Da don dep ${deletedCount} anh dia danh khong con su dung`,
+      deletedCount
+    });
+  } catch (err) {
+    return res.status(500).json({ message: `Loi may chu: ${err.message}` });
+  }
+};
+
 module.exports = {
   getStats,
   getUsers,
@@ -374,5 +441,7 @@ module.exports = {
   updateActivity,
   deleteActivity,
   uploadImage,
+  uploadLocationImage,
+  cleanupLocationImages,
 };
 

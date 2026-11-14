@@ -194,6 +194,12 @@ export const api = {
       formData.append('image', file);
       return post('/admin/upload', formData);
     },
+    uploadLocationImage: (file) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      return post('/admin/locations/upload-image', formData);
+    },
+    cleanupLocationImages: () => post('/admin/locations/cleanup-images'),
   },
 };
 

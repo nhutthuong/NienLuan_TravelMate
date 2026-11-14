@@ -38,13 +38,21 @@ const Admin = () => {
   // Modals & Form States: Địa danh
   const [editingDestination, setEditingDestination] = useState(null);
   const [isDestModalOpen, setIsDestModalOpen] = useState(false);
+  const [allCategories, setAllCategories] = useState([]);
+  const [isSavingDest, setIsSavingDest] = useState(false);
   const [destForm, setDestForm] = useState({
+    id: '',
     name: '',
     province: '',
-    category: '',
-    rating: 4.8,
-    image: '',
-    totalHotels: 0
+    danhHieu: '',
+    moTa: '',
+    viDo: '',
+    kinhDo: '',
+    quyMo: '',
+    thoiDiemLyTuong: '',
+    image: '/images/vinh_ha_long.jpg',
+    maLoaiHinhList: ['LH0001'],
+    categories: ['Thiên nhiên'],
   });
 
   // Modals & Form States: Điểm Check-in con
@@ -77,6 +85,17 @@ const Admin = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // 0. Tải danh mục loại hình du lịch
+    if (typeof api.locations?.getCategories === 'function') {
+      api.locations.getCategories()
+        .then((cats) => {
+          if (isMounted && Array.isArray(cats)) {
+            setAllCategories(cats);
+          }
+        })
+        .catch(() => {});
+    }
+
     // 1. Tải danh sách địa danh
     api.locations.getAll()
       .then((data) => {
@@ -85,13 +104,18 @@ const Admin = () => {
           id: loc.maDiaDiem || loc.id,
           name: loc.ten || loc.tenDiaDiem || loc.name,
           province: loc.tinhThanh || loc.location || '',
-          category: (Array.isArray(loc.loaiHinh) && loc.loaiHinh[0]) || loc.theLoai || loc.category || 'Thiên nhiên kỳ quan',
-          categories: Array.isArray(loc.loaiHinh) ? loc.loaiHinh : [],
-          rating: parseFloat(loc.danhGiaTB || loc.rating || 4.8),
+          danhHieu: loc.danhHieu || '',
+          moTa: loc.moTa || loc.desc || '',
+          viDo: loc.viDo !== undefined && loc.viDo !== null ? loc.viDo : '',
+          kinhDo: loc.kinhDo !== undefined && loc.kinhDo !== null ? loc.kinhDo : '',
+          quyMo: loc.quyMo || '',
+          thoiDiemLyTuong: loc.thoiDiemLyTuong || '',
           image: loc.anhUrl || loc.anh_url || loc.hinhAnh || loc.image || '/images/vinh_ha_long.jpg',
+          categories: Array.isArray(loc.loaiHinh) ? loc.loaiHinh : [],
+          maLoaiHinhList: Array.isArray(loc.maLoaiHinh) ? loc.maLoaiHinh : [],
+          category: (Array.isArray(loc.loaiHinh) && loc.loaiHinh[0]) || loc.theLoai || loc.category || 'Thiên nhiên',
           totalHotels: loc.totalHotels || 0,
           totalAttractions: loc.totalAttractions || 0,
-          desc: loc.moTa || loc.desc || '',
           status: 'Active',
         }));
         setDestinations(mapped);
@@ -200,42 +224,130 @@ const Admin = () => {
   const handleOpenAddDest = () => {
     setEditingDestination(null);
     setDestForm({
+      id: '',
       name: '',
       province: '',
-      category: 'Thiên nhiên kỳ quan',
-      rating: 4.8,
+      danhHieu: '',
+      moTa: '',
+      viDo: '',
+      kinhDo: '',
+      quyMo: '',
+      thoiDiemLyTuong: '',
       image: '/images/vinh_ha_long.jpg',
-      totalHotels: 0
+      imageFile: null,
+      imagePreview: null,
+      maLoaiHinhList: ['LH0001'],
+      categories: ['Thiên nhiên'],
     });
     setIsDestModalOpen(true);
   };
 
   const handleOpenEditDest = (dest) => {
     setEditingDestination(dest);
-    setDestForm({ ...dest });
+
+    let maLoaiHinhList = Array.isArray(dest.maLoaiHinhList) && dest.maLoaiHinhList.length > 0
+      ? [...dest.maLoaiHinhList]
+      : [];
+
+    if (maLoaiHinhList.length === 0 && Array.isArray(dest.categories) && dest.categories.length > 0 && allCategories.length > 0) {
+      maLoaiHinhList = allCategories
+        .filter(c => dest.categories.includes(c.ten))
+        .map(c => c.maLoaiHinh);
+    }
+
+    setDestForm({
+      id: dest.id,
+      name: dest.name || '',
+      province: dest.province || '',
+      danhHieu: dest.danhHieu || '',
+      moTa: dest.moTa || dest.desc || '',
+      viDo: dest.viDo !== undefined && dest.viDo !== null ? dest.viDo : '',
+      kinhDo: dest.kinhDo !== undefined && dest.kinhDo !== null ? dest.kinhDo : '',
+      quyMo: dest.quyMo || '',
+      thoiDiemLyTuong: dest.thoiDiemLyTuong || '',
+      image: dest.image || '/images/vinh_ha_long.jpg',
+      imageFile: null,
+      imagePreview: null,
+      maLoaiHinhList: maLoaiHinhList,
+      categories: Array.isArray(dest.categories) ? [...dest.categories] : (dest.category ? [dest.category] : ['Thiên nhiên']),
+    });
     setIsDestModalOpen(true);
   };
 
   const handleSaveDestination = async (e) => {
     e.preventDefault();
+    setIsSavingDest(true);
     try {
+      let finalImageUrl = destForm.image || '/images/vinh_ha_long.jpg';
+
+      // Nếu người dùng chọn tải ảnh mới từ máy tính, upload trước
+      if (destForm.imageFile) {
+        const uploadRes = await api.admin.uploadLocationImage(destForm.imageFile);
+        if (uploadRes && uploadRes.url) {
+          finalImageUrl = uploadRes.url;
+        }
+      }
+
       const payload = {
-        ten: destForm.name,
-        tinhThanh: destForm.province,
-        anhUrl: destForm.image || '/images/vinh_ha_long.jpg',
-        danhHieu: destForm.category,
-        moTa: destForm.desc || `${destForm.name} - ${destForm.province}`,
+        ten: (destForm.name || '').trim(),
+        tinhThanh: (destForm.province || '').trim(),
+        danhHieu: destForm.danhHieu ? destForm.danhHieu.trim() : null,
+        moTa: destForm.moTa ? destForm.moTa.trim() : null,
+        viDo: destForm.viDo !== '' && destForm.viDo !== null && !isNaN(Number(destForm.viDo)) ? parseFloat(destForm.viDo) : null,
+        kinhDo: destForm.kinhDo !== '' && destForm.kinhDo !== null && !isNaN(Number(destForm.kinhDo)) ? parseFloat(destForm.kinhDo) : null,
+        quyMo: destForm.quyMo ? destForm.quyMo.trim() : null,
+        thoiDiemLyTuong: destForm.thoiDiemLyTuong ? destForm.thoiDiemLyTuong.trim() : null,
+        anhUrl: finalImageUrl,
+        maLoaiHinhList: destForm.maLoaiHinhList || [],
       };
 
+      if (!payload.ten || !payload.tinhThanh) {
+        alert('Tên địa danh và Tỉnh/Thành phố là bắt buộc.');
+        setIsSavingDest(false);
+        return;
+      }
+
       if (editingDestination) {
-        await api.admin.updateLocation(editingDestination.id, payload);
-        setDestinations(prev => prev.map(d => String(d.id) === String(editingDestination.id) ? { ...d, ...destForm } : d));
+        const res = await api.admin.updateLocation(editingDestination.id, payload);
+        const updatedData = res?.data;
+        setDestinations(prev => prev.map(d => {
+          if (String(d.id) === String(editingDestination.id)) {
+            return {
+              ...d,
+              name: payload.ten,
+              province: payload.tinhThanh,
+              danhHieu: payload.danhHieu || '',
+              moTa: payload.moTa || '',
+              viDo: payload.viDo,
+              kinhDo: payload.kinhDo,
+              quyMo: payload.quyMo || '',
+              thoiDiemLyTuong: payload.thoiDiemLyTuong || '',
+              image: payload.anhUrl,
+              categories: destForm.categories?.length > 0 ? destForm.categories : d.categories,
+              maLoaiHinhList: destForm.maLoaiHinhList || d.maLoaiHinhList,
+              category: destForm.categories?.[0] || d.category || 'Thiên nhiên',
+            };
+          }
+          return d;
+        }));
       } else {
         const res = await api.admin.createLocation(payload);
-        const createdId = res?.data?.maDiaDiem || `DD${String(destinations.length + 1).padStart(4, '0')}`;
+        const createdLoc = res?.data;
+        const createdId = createdLoc?.maDiaDiem || `DD${String(destinations.length + 1).padStart(4, '0')}`;
         const newDest = {
-          ...destForm,
           id: createdId,
+          name: payload.ten,
+          province: payload.tinhThanh,
+          danhHieu: payload.danhHieu || '',
+          moTa: payload.moTa || '',
+          viDo: payload.viDo,
+          kinhDo: payload.kinhDo,
+          quyMo: payload.quyMo || '',
+          thoiDiemLyTuong: payload.thoiDiemLyTuong || '',
+          image: payload.anhUrl,
+          categories: destForm.categories?.length > 0 ? destForm.categories : ['Thiên nhiên'],
+          maLoaiHinhList: destForm.maLoaiHinhList || ['LH0001'],
+          category: destForm.categories?.[0] || 'Thiên nhiên',
           status: 'Active',
           totalHotels: 0,
           totalAttractions: 0
@@ -245,17 +357,25 @@ const Admin = () => {
       setIsDestModalOpen(false);
     } catch (err) {
       alert(err.message || 'Lỗi khi lưu thông tin địa danh.');
+    } finally {
+      setIsSavingDest(false);
     }
   };
 
   const handleDeleteDestination = async (id) => {
-    const protectedIds = ['DD0001', 'DD0002', 'DD0003', 'DD0004', 'DD0005', 'DD0006', 'DD0007', 'DD0008', 'DD0009', 'DD0010', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    if (protectedIds.includes(id) || (typeof id === 'string' && id.startsWith('DD00') && parseInt(id.replace('DD', ''), 10) <= 10)) {
-      alert('Không thể xóa 10 địa danh gốc gắn với mô hình nhận diện AI ResNet50 (DD0001 - DD0010)!');
+    const isAi = (typeof id === 'number' && id <= 10) ||
+      (typeof id === 'string' && (
+        ['DD0001', 'DD0002', 'DD0003', 'DD0004', 'DD0005', 'DD0006', 'DD0007', 'DD0008', 'DD0009', 'DD0010'].includes(id) ||
+        (id.startsWith('DD00') && parseInt(id.replace('DD', ''), 10) <= 10) ||
+        (parseInt(id, 10) <= 10)
+      ));
+
+    if (isAi) {
+      alert('Theo tài liệu đặc tả hệ thống (AGENT.md & PROJECT_OVERVIEW.md), 10 địa danh gốc gắn liền với mô hình AI ResNet50 (DD0001 - DD0010) chỉ được phép chỉnh sửa thông tin, không được phép xóa khỏi cơ sở dữ liệu!');
       return;
     }
 
-    if (window.confirm('Bạn có chắc chắn muốn xóa địa điểm du lịch này khỏi danh mục hệ thống?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa địa điểm du lịch mở rộng này khỏi danh mục hệ thống?')) {
       try {
         await api.admin.deleteLocation(id);
         setDestinations(prev => prev.filter(d => String(d.id) !== String(id)));
@@ -584,6 +704,8 @@ const Admin = () => {
         destForm={destForm}
         setDestForm={setDestForm}
         onSave={handleSaveDestination}
+        availableCategories={allCategories}
+        isSaving={isSavingDest}
       />
 
       <CheckInSpotModal

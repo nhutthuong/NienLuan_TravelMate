@@ -40,7 +40,7 @@ export const ORIGINAL_DESTINATIONS = [
     name: "Chợ Nổi Cái Răng",
     location: "Cần Thơ",
     category: "Sông nước miền Tây",
-    image: "/images/cho_noi.jpg",
+    image: "/images/location_image_180_1794659424938-4870.jpg",
   },
   {
     id: "DD0008",

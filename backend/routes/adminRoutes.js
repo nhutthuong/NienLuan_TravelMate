@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { verifyToken, requireAdmin } = require('../middleware/authMiddleware');
-const { uploadMedia } = require('../middleware/uploadMiddleware');
+const { uploadMedia, uploadLocationImage } = require('../middleware/uploadMiddleware');
 
 router.use(verifyToken, requireAdmin);
 
@@ -17,6 +17,8 @@ router.patch('/users/:id/status', adminController.updateUserStatus);
 router.post('/locations', adminController.createLocation);
 router.put('/locations/:id', adminController.updateLocation);
 router.delete('/locations/:id', adminController.deleteLocation);
+router.post('/locations/upload-image', uploadLocationImage.single('image'), adminController.uploadLocationImage);
+router.post('/locations/cleanup-images', adminController.cleanupLocationImages);
 
 // Diem tham quan
 router.post('/attractions', adminController.createAttraction);
