@@ -80,6 +80,11 @@ const ServiceHeader = ({
             <span>{data.diaChi}</span>
             {data.tenDiaDiem && <span>• {data.tenDiaDiem}</span>}
             {data.tinhThanh && <span>, {data.tinhThanh}</span>}
+            {data.viDo && data.kinhDo && (
+              <span className="font-mono text-xs text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-md">
+                GPS: {Number(data.viDo).toFixed(4)}°, {Number(data.kinhDo).toFixed(4)}°
+              </span>
+            )}
             <button
               onClick={onDirections}
               className="ml-2 text-sky-600 hover:text-sky-700 font-semibold underline underline-offset-2 flex items-center gap-1 cursor-pointer"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
 import {
   INITIAL_DESTINATIONS,
   INITIAL_SERVICES,
@@ -58,13 +59,26 @@ const Admin = () => {
   // Modals & Form States: Điểm Check-in con
   const [editingCheckIn, setEditingCheckIn] = useState(null);
   const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
+  const [allActivities, setAllActivities] = useState([]);
+  const [isSavingCheckIn, setIsSavingCheckIn] = useState(false);
+  const [spotToDelete, setSpotToDelete] = useState(null);
+  const [isDeletingCheckIn, setIsDeletingCheckIn] = useState(false);
   const [checkInForm, setCheckInForm] = useState({
+    id: '',
     name: '',
-    locationId: 1,
+    locationId: 'DD0001',
     desc: '',
-    image: '',
-    ticketPrice: '',
-    bestTime: ''
+    diemNoiBat: '',
+    diaChi: '',
+    viDo: '',
+    kinhDo: '',
+    ticketPrice: 'Miễn phí',
+    bestTime: '08:00 – 17:00',
+    image: '/images/vinh_ha_long.jpg',
+    imageFile: null,
+    imagePreview: null,
+    maLoaiHinhList: ['LH0001'],
+    hoatDongList: [],
   });
 
   // Modals & Form States: Khách sạn / Dịch vụ
@@ -85,12 +99,21 @@ const Admin = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // 0. Tải danh mục loại hình du lịch
+    // 0. Tải danh mục loại hình du lịch và danh mục hoạt động
     if (typeof api.locations?.getCategories === 'function') {
       api.locations.getCategories()
         .then((cats) => {
           if (isMounted && Array.isArray(cats)) {
             setAllCategories(cats);
+          }
+        })
+        .catch(() => {});
+    }
+    if (typeof api.locations?.getActivities === 'function') {
+      api.locations.getActivities()
+        .then((acts) => {
+          if (isMounted && Array.isArray(acts)) {
+            setAllActivities(acts);
           }
         })
         .catch(() => {});
@@ -132,9 +155,16 @@ const Admin = () => {
           locationId: att.maDiaDiem || att.locationId,
           locationName: att.tenDiaDiem || '',
           desc: att.moTa || att.desc || '',
-          image: att.anhDaiDien || att.hinhAnh || att.image || '/images/cau_vang.jpg',
+          diemNoiBat: att.diemNoiBat || '',
+          diaChi: att.diaChi || '',
+          viDo: att.viDo !== undefined && att.viDo !== null ? att.viDo : '',
+          kinhDo: att.kinhDo !== undefined && att.kinhDo !== null ? att.kinhDo : '',
+          image: att.anhDaiDien || att.hinhAnh || att.image || '/images/vinh_ha_long.jpg',
           ticketPrice: att.giaVe || att.ticketPrice || 'Miễn phí',
-          bestTime: att.gioMoCua || att.bestTime || '08:00 - 17:00',
+          bestTime: att.gioMoCua || att.bestTime || '08:00 – 17:00',
+          loaiHinh: Array.isArray(att.loaiHinh) ? att.loaiHinh : [],
+          maLoaiHinhList: Array.isArray(att.maLoaiHinh) ? att.maLoaiHinh : [],
+          hoatDongList: Array.isArray(att.hoatDong) ? att.hoatDong : [],
         }));
         setCheckInSpots(mapped);
       })
@@ -386,69 +416,284 @@ const Admin = () => {
   };
 
   // ================= 2. XỬ LÝ ĐIỂM CHECK-IN CON =================
-  const handleOpenAddCheckIn = () => {
+  const handleOpenAddCheckIn = (defaultLocId) => {
     setEditingCheckIn(null);
     setCheckInForm({
+      id: '',
       name: '',
-      locationId: destinations[0]?.id || 'DD0001',
+      locationId: defaultLocId || destinations[0]?.id || 'DD0001',
       desc: '',
-      image: 'https://images.unsplash.com/photo-1550417937-293e545fc11c?q=80&w=600&auto=format&fit=crop',
+      diemNoiBat: '',
+      diaChi: '',
+      viDo: '',
+      kinhDo: '',
       ticketPrice: 'Miễn phí',
-      bestTime: '08:00 - 17:00'
+      bestTime: '08:00 – 17:00',
+      image: '',
+      mediaList: [],
+      maLoaiHinhList: ['LH0001'],
+      hoatDongList: [],
     });
     setIsCheckInModalOpen(true);
   };
 
-  const handleOpenEditCheckIn = (spot) => {
+  const handleOpenEditCheckIn = async (spot) => {
     setEditingCheckIn(spot);
-    setCheckInForm({ ...spot });
+    const initialMedia = Array.isArray(spot.mediaList) && spot.mediaList.length > 0
+      ? spot.mediaList
+      : (spot.image && !spot.image.startsWith('blob:') ? [{ url: spot.image, type: 'image', thuTu: 1 }] : []);
+
+    const initialHoatDong = Array.isArray(spot.hoatDongList)
+      ? spot.hoatDongList.map((h, idx) =>
+          typeof h === 'string'
+            ? { ten: h, icon: 'sparkles', ghiChu: '', thuTu: idx + 1 }
+            : {
+                maHoatDong: h.maHoatDong || h.mahoatdong,
+                ten: h.ten || h.name || '',
+                icon: h.icon || 'sparkles',
+                ghiChu: h.ghiChu || h.ghichu || '',
+                thuTu: h.thuTu || h.thutu || idx + 1,
+              }
+        )
+      : [];
+
+    setCheckInForm({
+      id: spot.id,
+      name: spot.name || '',
+      locationId: spot.locationId || destinations[0]?.id || 'DD0001',
+      desc: spot.desc || '',
+      diemNoiBat: spot.diemNoiBat || '',
+      diaChi: spot.diaChi || '',
+      viDo: spot.viDo !== undefined && spot.viDo !== null ? spot.viDo : '',
+      kinhDo: spot.kinhDo !== undefined && spot.kinhDo !== null ? spot.kinhDo : '',
+      ticketPrice: spot.ticketPrice || 'Miễn phí',
+      bestTime: spot.bestTime || '08:00 – 17:00',
+      image: spot.image || '/images/vinh_ha_long.jpg',
+      mediaList: initialMedia,
+      maLoaiHinhList: Array.isArray(spot.maLoaiHinhList) ? spot.maLoaiHinhList : [],
+      hoatDongList: initialHoatDong,
+    });
     setIsCheckInModalOpen(true);
+
+    try {
+      const fullDetail = await api.attractions.getById(spot.id);
+      if (fullDetail) {
+        const fullMedia = Array.isArray(fullDetail.media) && fullDetail.media.length > 0
+          ? fullDetail.media.map((m, idx) => ({
+              url: m.url,
+              type: m.type || 'image',
+              thuTu: m.thuTu || idx + 1,
+            }))
+          : initialMedia;
+
+        setCheckInForm((prev) => ({
+          ...prev,
+          name: fullDetail.ten || prev.name,
+          locationId: fullDetail.maDiaDiem || prev.locationId,
+          desc: fullDetail.moTa || prev.desc,
+          diemNoiBat: fullDetail.diemNoiBat || prev.diemNoiBat,
+          diaChi: fullDetail.diaChi || prev.diaChi,
+          viDo: fullDetail.viDo !== undefined && fullDetail.viDo !== null ? fullDetail.viDo : prev.viDo,
+          kinhDo: fullDetail.kinhDo !== undefined && fullDetail.kinhDo !== null ? fullDetail.kinhDo : prev.kinhDo,
+          ticketPrice: fullDetail.giaVe || prev.ticketPrice,
+          bestTime: fullDetail.gioMoCua || prev.bestTime,
+          image: fullMedia[0]?.url || prev.image,
+          mediaList: fullMedia,
+          maLoaiHinhList: Array.isArray(fullDetail.maLoaiHinh) && fullDetail.maLoaiHinh.length > 0
+            ? fullDetail.maLoaiHinh
+            : prev.maLoaiHinhList,
+          hoatDongList: Array.isArray(fullDetail.hoatDong)
+            ? fullDetail.hoatDong.map((h, idx) => ({
+                maHoatDong: h.maHoatDong || h.mahoatdong,
+                ten: h.ten || h.name || '',
+                icon: h.icon || 'sparkles',
+                ghiChu: h.ghiChu || h.ghichu || '',
+                thuTu: h.thuTu || h.thutu || idx + 1,
+              }))
+            : prev.hoatDongList,
+        }));
+      }
+    } catch (err) {
+      console.warn('Không thể tải chi tiết điểm check-in:', err);
+    }
   };
 
   const handleSaveCheckIn = async (e) => {
     e.preventDefault();
-    const locObj = destinations.find(d => String(d.id) === String(checkInForm.locationId));
+    if (!checkInForm.name || !checkInForm.name.trim()) {
+      alert('Vui lòng nhập tên điểm tham quan.');
+      return;
+    }
+    if (!checkInForm.locationId) {
+      alert('Vui lòng chọn địa danh trực thuộc.');
+      return;
+    }
+
     try {
+      setIsSavingCheckIn(true);
+
+      // Xử lý toàn bộ danh sách hình ảnh trong mediaList
+      const mediaItems = Array.isArray(checkInForm.mediaList) && checkInForm.mediaList.length > 0
+        ? checkInForm.mediaList
+        : (checkInForm.image && !checkInForm.image.startsWith('blob:') ? [{ url: checkInForm.image, type: 'image' }] : []);
+
+      const resolvedMediaList = [];
+      for (let i = 0; i < mediaItems.length; i++) {
+        const item = mediaItems[i];
+        let mediaUrl = item.url;
+        // Nếu là file chọn tải lên từ máy tính
+        if (item.file) {
+          const uploadRes = await api.admin.uploadLocationImage(item.file);
+          const uploadedUrl = uploadRes?.url || uploadRes?.data?.url;
+          if (uploadedUrl) {
+            mediaUrl = uploadedUrl;
+          }
+        }
+        if (mediaUrl && !mediaUrl.startsWith('blob:')) {
+          resolvedMediaList.push({
+            mediaUrl,
+            mediaType: item.type || 'image',
+            thuTu: resolvedMediaList.length + 1,
+          });
+        }
+      }
+
+      if (resolvedMediaList.length === 0 && checkInForm.image && !checkInForm.image.startsWith('blob:')) {
+        resolvedMediaList.push({
+          mediaUrl: checkInForm.image,
+          mediaType: 'image',
+          thuTu: 1,
+        });
+      }
+
+      const primaryImageUrl = resolvedMediaList[0]?.mediaUrl || (checkInForm.image && !checkInForm.image.startsWith('blob:') ? checkInForm.image : '/images/vinh_ha_long.jpg');
+      const locObj = destinations.find((d) => String(d.id) === String(checkInForm.locationId));
+
+      const resolvedHoatDongList = (checkInForm.hoatDongList || [])
+        .map((h, idx) => ({
+          maHoatDong: typeof h === 'object' ? (h.maHoatDong || h.mahoatdong) : undefined,
+          ten: typeof h === 'object' ? (h.ten || h.name || '') : h,
+          icon: typeof h === 'object' ? (h.icon || 'sparkles') : 'sparkles',
+          ghiChu: typeof h === 'object' ? (h.ghiChu || h.ghichu || '') : '',
+          thuTu: idx + 1,
+        }))
+        .filter((h) => Boolean(h.ten && h.ten.trim()));
+
       const payload = {
         maDiaDiem: checkInForm.locationId,
-        ten: checkInForm.name,
-        moTa: checkInForm.desc,
-        giaVe: checkInForm.ticketPrice,
-        gioMoCua: checkInForm.bestTime,
-        mediaList: checkInForm.image ? [{ mediaUrl: checkInForm.image, mediaType: 'image', thuTu: 1 }] : [],
+        ten: checkInForm.name.trim(),
+        moTa: checkInForm.desc || '',
+        diemNoiBat: checkInForm.diemNoiBat || '',
+        diaChi: checkInForm.diaChi || '',
+        viDo: checkInForm.viDo ? parseFloat(checkInForm.viDo) : null,
+        kinhDo: checkInForm.kinhDo ? parseFloat(checkInForm.kinhDo) : null,
+        giaVe: checkInForm.ticketPrice || 'Miễn phí',
+        gioMoCua: checkInForm.bestTime || '08:00 – 17:00',
+        mediaList: resolvedMediaList,
+        maLoaiHinhList: checkInForm.maLoaiHinhList || [],
+        hoatDongList: resolvedHoatDongList,
       };
 
+      const matchedCatNames = allCategories
+        .filter((c) => (checkInForm.maLoaiHinhList || []).includes(c.maLoaiHinh))
+        .map((c) => c.ten);
+
       if (editingCheckIn) {
-        await api.admin.updateAttraction(editingCheckIn.id, payload);
-        setCheckInSpots(prev => prev.map(c => String(c.id) === String(editingCheckIn.id) ? {
-          ...c,
-          ...checkInForm,
-          locationName: locObj ? locObj.name : c.locationName
-        } : c));
+        const updateRes = await api.admin.updateAttraction(editingCheckIn.id, payload);
+        const updatedDetail = updateRes?.data;
+        const savedMedia = (updatedDetail?.media && updatedDetail.media.length > 0)
+          ? updatedDetail.media.map((m, idx) => ({ url: m.url, type: m.type || 'image', thuTu: m.thuTu || idx + 1 }))
+          : resolvedMediaList.map(m => ({ url: m.mediaUrl, type: m.mediaType, thuTu: m.thuTu }));
+        const finalPrimaryImage = savedMedia[0]?.url || primaryImageUrl;
+        const finalHoatDong = (updatedDetail?.hoatDong && updatedDetail.hoatDong.length > 0)
+          ? updatedDetail.hoatDong
+          : resolvedHoatDongList;
+
+        setCheckInSpots((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(editingCheckIn.id)
+              ? {
+                  ...c,
+                  name: payload.ten,
+                  locationId: payload.maDiaDiem,
+                  locationName: locObj ? locObj.name : c.locationName,
+                  desc: payload.moTa,
+                  diemNoiBat: payload.diemNoiBat,
+                  diaChi: payload.diaChi,
+                  viDo: payload.viDo,
+                  kinhDo: payload.kinhDo,
+                  ticketPrice: payload.giaVe,
+                  bestTime: payload.gioMoCua,
+                  image: finalPrimaryImage,
+                  mediaList: savedMedia,
+                  maLoaiHinhList: payload.maLoaiHinhList,
+                  loaiHinh: matchedCatNames.length > 0 ? matchedCatNames : c.loaiHinh,
+                  hoatDongList: finalHoatDong,
+                }
+              : c
+          )
+        );
       } else {
         const res = await api.admin.createAttraction(payload);
-        const createdId = res?.data?.maDiemTQ || `TQ${String(checkInSpots.length + 1).padStart(4, '0')}`;
+        const createdDetail = res?.data;
+        const createdId = createdDetail?.maDiemTQ || `TQ${String(checkInSpots.length + 1).padStart(4, '0')}`;
+        const savedMedia = (createdDetail?.media && createdDetail.media.length > 0)
+          ? createdDetail.media.map((m, idx) => ({ url: m.url, type: m.type || 'image', thuTu: m.thuTu || idx + 1 }))
+          : resolvedMediaList.map(m => ({ url: m.mediaUrl, type: m.mediaType, thuTu: m.thuTu }));
+        const finalPrimaryImage = savedMedia[0]?.url || primaryImageUrl;
+        const finalHoatDong = (createdDetail?.hoatDong && createdDetail.hoatDong.length > 0)
+          ? createdDetail.hoatDong
+          : resolvedHoatDongList;
+
         const newSpot = {
-          ...checkInForm,
           id: createdId,
-          locationName: locObj ? locObj.name : (destinations[0]?.name || 'Vịnh Hạ Long')
+          name: payload.ten,
+          locationId: payload.maDiaDiem,
+          locationName: locObj ? locObj.name : destinations[0]?.name || '',
+          desc: payload.moTa,
+          diemNoiBat: payload.diemNoiBat,
+          diaChi: payload.diaChi,
+          viDo: payload.viDo,
+          kinhDo: payload.kinhDo,
+          ticketPrice: payload.giaVe,
+          bestTime: payload.gioMoCua,
+          image: finalPrimaryImage,
+          mediaList: savedMedia,
+          maLoaiHinhList: payload.maLoaiHinhList,
+          loaiHinh: matchedCatNames,
+          hoatDongList: finalHoatDong,
         };
-        setCheckInSpots(prev => [...prev, newSpot]);
+        setCheckInSpots((prev) => [newSpot, ...prev]);
       }
       setIsCheckInModalOpen(false);
     } catch (err) {
       alert(err.message || 'Lỗi khi lưu điểm check-in.');
+    } finally {
+      setIsSavingCheckIn(false);
     }
   };
 
-  const handleDeleteCheckIn = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa điểm check-in này khỏi địa danh?')) {
-      try {
-        await api.admin.deleteAttraction(id);
-        setCheckInSpots(prev => prev.filter(c => String(c.id) !== String(id)));
-      } catch (err) {
-        alert(err.message || 'Không thể xóa điểm check-in.');
-      }
+  const handleRequestDeleteCheckIn = (spotOrId) => {
+    const spot =
+      typeof spotOrId === 'object' && spotOrId !== null
+        ? spotOrId
+        : checkInSpots.find((c) => String(c.id) === String(spotOrId));
+    if (spot) {
+      setSpotToDelete(spot);
+    }
+  };
+
+  const handleConfirmDeleteCheckIn = async () => {
+    if (!spotToDelete) return;
+    try {
+      setIsDeletingCheckIn(true);
+      await api.admin.deleteAttraction(spotToDelete.id);
+      setCheckInSpots((prev) => prev.filter((c) => String(c.id) !== String(spotToDelete.id)));
+      setSpotToDelete(null);
+    } catch (err) {
+      alert(err.message || 'Không thể xóa điểm check-in.');
+    } finally {
+      setIsDeletingCheckIn(false);
     }
   };
 
@@ -639,15 +884,17 @@ const Admin = () => {
           {activeTab === 'checkins' && (
             <CheckInSpotsTab
               checkInSpots={checkInSpots.filter(c =>
-                c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.locationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.desc.toLowerCase().includes(searchQuery.toLowerCase())
+                (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (c.locationName && c.locationName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (c.desc && c.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (c.diemNoiBat && c.diemNoiBat.toLowerCase().includes(searchQuery.toLowerCase()))
               )}
+              destinations={destinations}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               onOpenAdd={handleOpenAddCheckIn}
               onOpenEdit={handleOpenEditCheckIn}
-              onDelete={handleDeleteCheckIn}
+              onDelete={handleRequestDeleteCheckIn}
             />
           )}
 
@@ -716,6 +963,9 @@ const Admin = () => {
         setCheckInForm={setCheckInForm}
         destinations={destinations}
         onSave={handleSaveCheckIn}
+        availableCategories={allCategories}
+        availableActivities={allActivities}
+        isSaving={isSavingCheckIn}
       />
 
       <ServiceModal
@@ -727,6 +977,48 @@ const Admin = () => {
         destinations={destinations}
         onSave={handleSaveService}
       />
+
+      {/* POPUP XÁC NHẬN XÓA ĐIỂM CHECK-IN */}
+      {spotToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              Xác nhận xóa điểm check-in
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              Bạn có chắc chắn muốn xóa điểm tham quan <span className="font-semibold text-slate-800">"{spotToDelete.name}"</span> ({spotToDelete.id})? Toàn bộ hình ảnh, liên kết danh mục và đánh giá liên quan sẽ bị xóa.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setSpotToDelete(null)}
+                disabled={isDeletingCheckIn}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteCheckIn}
+                disabled={isDeletingCheckIn}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              >
+                {isDeletingCheckIn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xác nhận xóa</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -99,8 +99,26 @@ const ServiceDetail = () => {
   };
 
   const handleDirections = () => {
-    const query = encodeURIComponent(`${data.ten} ${data.diaChi || ''} ${data.tinhThanh || ''}`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
+    const lat = (data?.viDo !== undefined && data?.viDo !== null && !isNaN(Number(data.viDo)))
+      ? parseFloat(data.viDo)
+      : null;
+    const lng = (data?.kinhDo !== undefined && data?.kinhDo !== null && !isNaN(Number(data.kinhDo)))
+      ? parseFloat(data.kinhDo)
+      : null;
+
+    if (lat !== null && lng !== null) {
+      // Khi truyền tọa độ GPS chính xác (lat, lng), Google Maps luôn cắm ghim đỏ (red marker pin) tại đúng vị trí
+      const label = encodeURIComponent(data.ten || 'Điểm đến');
+      window.open(
+        `https://www.google.com/maps?q=${lat},${lng}+(${label})&hl=vi`,
+        '_blank',
+        'noopener,noreferrer'
+      );
+    } else {
+      // Dự phòng nếu chưa có tọa độ GPS: tìm theo tên + địa chỉ
+      const query = encodeURIComponent(`${data?.ten || ''} ${data?.diaChi || ''} ${data?.tinhThanh || ''}`.trim());
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleReviewSubmit = async (e) => {

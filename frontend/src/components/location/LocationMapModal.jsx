@@ -52,9 +52,13 @@ const LocationMapModal = ({ location, onClose }) => {
             Sử dụng cử chỉ chuột để phóng to/thu nhỏ và di chuyển trên bản đồ.
           </span>
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-              location.ten + ' ' + (location.tinhThanh || '')
-            )}`}
+            href={
+              location.viDo && location.kinhDo
+                ? `https://www.google.com/maps?q=${location.viDo},${location.kinhDo}+(${encodeURIComponent(location.ten)})&hl=vi`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    location.ten + ' ' + (location.tinhThanh || '')
+                  )}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition flex items-center gap-1.5"

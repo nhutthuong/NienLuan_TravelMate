@@ -4,6 +4,7 @@ const { query } = require('../config/db');
 
 const locationImagesDir = path.resolve(__dirname, '../../frontend/public/images');
 const distImagesDir = path.resolve(__dirname, '../../frontend/dist/images');
+const PROTECTED_FILENAMES = new Set(['vinh_ha_long.jpg']);
 
 // Đảm bảo thư mục public/images tồn tại
 if (!fs.existsSync(locationImagesDir)) {
@@ -29,7 +30,7 @@ const deleteLocationImageFile = async (imageUrl) => {
     }
 
     const filename = path.basename(imageUrl);
-    if (!filename) return false;
+    if (!filename || PROTECTED_FILENAMES.has(filename)) return false;
 
     // Ngăn chặn directory traversal
     const fullPath = path.join(locationImagesDir, filename);
@@ -38,11 +39,13 @@ const deleteLocationImageFile = async (imageUrl) => {
       return false;
     }
 
-    // Kiểm tra xem trong bảng DiaDiem còn địa danh nào đang sử dụng ảnh này không
+    // Kiểm tra xem trong bảng DiaDiem, MediaDiemThamQuan, MediaKhachSan còn mục nào đang sử dụng ảnh này không
     const checkSql = `
-      SELECT COUNT(*) AS count
-      FROM DiaDiem
-      WHERE anh_url LIKE $1
+      SELECT (
+        (SELECT COUNT(*) FROM DiaDiem WHERE anh_url LIKE $1) +
+        (SELECT COUNT(*) FROM MediaDiemThamQuan WHERE media_url LIKE $1) +
+        (SELECT COUNT(*) FROM MediaKhachSan WHERE media_url LIKE $1)
+      ) AS count
     `;
     const checkRes = await query(checkSql, [`%${filename}%`]);
     const inUseCount = parseInt(checkRes.rows[0]?.count || 0, 10);
@@ -85,16 +88,16 @@ const cleanupAllUnusedLocationImages = async () => {
   try {
     if (!fs.existsSync(locationImagesDir)) return 0;
 
-    // Lấy toàn bộ các anh_url đang được DiaDiem sử dụng
-    const res = await query(`
-      SELECT DISTINCT anh_url
-      FROM DiaDiem
-      WHERE anh_url IS NOT NULL AND anh_url <> ''
-    `);
+    // Lấy toàn bộ các ảnh đang được DiaDiem, MediaDiemThamQuan, MediaKhachSan sử dụng
+    const [resLoc, resDtq, resKs] = await Promise.all([
+      query(`SELECT DISTINCT anh_url AS url FROM DiaDiem WHERE anh_url IS NOT NULL AND anh_url <> ''`),
+      query(`SELECT DISTINCT media_url AS url FROM MediaDiemThamQuan WHERE media_url IS NOT NULL AND media_url <> ''`),
+      query(`SELECT DISTINCT media_url AS url FROM MediaKhachSan WHERE media_url IS NOT NULL AND media_url <> ''`),
+    ]);
 
     const activeFilenames = new Set(
-      res.rows
-        .map((r) => r.anh_url)
+      [...resLoc.rows, ...resDtq.rows, ...resKs.rows]
+        .map((r) => r.url)
         .filter((url) => url && typeof url === 'string')
         .map((url) => path.basename(url))
         .filter((name) => Boolean(name))
@@ -107,7 +110,7 @@ const cleanupAllUnusedLocationImages = async () => {
 
     for (const file of filesOnDisk) {
       const ext = path.extname(file).toLowerCase();
-      if (!allowedExts.includes(ext)) continue;
+      if (!allowedExts.includes(ext) || PROTECTED_FILENAMES.has(file)) continue;
 
       if (!activeFilenames.has(file)) {
         const filePath = path.join(locationImagesDir, file);

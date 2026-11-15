@@ -64,6 +64,24 @@ const getAllAttractions = async (
         ORDER BY thutu ASC LIMIT 1
       ) AS anh_dai_dien,
       COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
+      COALESCE(ARRAY_AGG(DISTINCT lh.maloaihinh) FILTER (WHERE lh.maloaihinh IS NOT NULL), ARRAY[]::VARCHAR[]) AS ma_loai_hinh,
+      COALESCE(
+        (
+          SELECT JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'maHoatDong', hd.mahoatdong,
+              'ten', hd.ten,
+              'icon', hd.icon,
+              'ghiChu', th.ghichu,
+              'thuTu', th.thutu
+            ) ORDER BY th.thutu
+          )
+          FROM DiemThamQuan_HoatDong th
+          JOIN HoatDong hd ON th.mahoatdong = hd.mahoatdong
+          WHERE th.madiemtq = tq.madiemtq
+        ),
+        '[]'::JSON
+      ) AS hoat_dong,
       COALESCE(
         (SELECT ROUND(AVG(danhgia), 1) FROM DanhGiaDiemTQ WHERE madiemtq = tq.madiemtq AND trangthai = 'Approved'),
         5.0
@@ -89,8 +107,8 @@ const getAllAttractions = async (
     maDiaDiem: row.madiadiem,
     ten: row.ten,
     moTa: row.mota,
-    viDo: parseFloat(row.vido),
-    kinhDo: parseFloat(row.kinhdo),
+    viDo: row.vido !== null && row.vido !== undefined ? parseFloat(row.vido) : null,
+    kinhDo: row.kinhdo !== null && row.kinhdo !== undefined ? parseFloat(row.kinhdo) : null,
     diaChi: row.diachi,
     giaVe: row.giave,
     gioMoCua: row.giomocua,
@@ -99,6 +117,8 @@ const getAllAttractions = async (
     tinhThanh: row.tinhthanh,
     anhDaiDien: row.anh_dai_dien || '/images/cau_vang.jpg',
     loaiHinh: row.loai_hinh,
+    maLoaiHinh: row.ma_loai_hinh,
+    hoatDong: typeof row.hoat_dong === 'string' ? JSON.parse(row.hoat_dong) : (row.hoat_dong || []),
     diemDanhGia: parseFloat(row.diem_danh_gia),
     soDanhGia: row.so_danh_gia,
     isFavorited: row.is_favorited,
@@ -132,6 +152,7 @@ const getById = async (maDiemTQ, currentUserId = null) => {
       d.ten AS ten_dia_diem,
       d.tinhthanh,
       COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
+      COALESCE(ARRAY_AGG(DISTINCT tl.maloaihinh) FILTER (WHERE tl.maloaihinh IS NOT NULL), ARRAY[]::VARCHAR[]) AS ma_loai_hinh,
       COALESCE(
         (SELECT ROUND(AVG(danhgia), 1) FROM DanhGiaDiemTQ WHERE madiemtq = tq.madiemtq AND trangthai = 'Approved'),
         5.0
@@ -182,8 +203,8 @@ const getById = async (maDiemTQ, currentUserId = null) => {
     maDiaDiem: row.madiadiem,
     ten: row.ten,
     moTa: row.mota,
-    viDo: parseFloat(row.vido),
-    kinhDo: parseFloat(row.kinhdo),
+    viDo: row.vido !== null && row.vido !== undefined ? parseFloat(row.vido) : null,
+    kinhDo: row.kinhdo !== null && row.kinhdo !== undefined ? parseFloat(row.kinhdo) : null,
     diaChi: row.diachi,
     giaVe: row.giave,
     gioMoCua: row.giomocua,
@@ -191,6 +212,7 @@ const getById = async (maDiemTQ, currentUserId = null) => {
     tenDiaDiem: row.ten_dia_diem,
     tinhThanh: row.tinhthanh,
     loaiHinh: row.loai_hinh,
+    maLoaiHinh: row.ma_loai_hinh,
     diemDanhGia: parseFloat(row.diem_danh_gia),
     soDanhGia: row.so_danh_gia,
     isFavorited: row.is_favorited,
@@ -253,6 +275,13 @@ const createAttraction = async (data, loaiHinhList = [], hoatDongList = [], medi
   try {
     await client.query('BEGIN');
 
+    const viDo = (data.viDo !== undefined && data.viDo !== null && data.viDo !== '' && !isNaN(Number(data.viDo)))
+      ? parseFloat(data.viDo)
+      : null;
+    const kinhDo = (data.kinhDo !== undefined && data.kinhDo !== null && data.kinhDo !== '' && !isNaN(Number(data.kinhDo)))
+      ? parseFloat(data.kinhDo)
+      : null;
+
     const insertSql = `
       INSERT INTO DiemThamQuan (madiadiem, ten, mota, vido, kinhdo, diachi, giave, giomocua, diemnoibat)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -262,8 +291,8 @@ const createAttraction = async (data, loaiHinhList = [], hoatDongList = [], medi
       data.maDiaDiem,
       data.ten,
       data.moTa || null,
-      data.viDo || null,
-      data.kinhDo || null,
+      viDo,
+      kinhDo,
       data.diaChi || null,
       data.giaVe || null,
       data.gioMoCua || null,
@@ -282,21 +311,54 @@ const createAttraction = async (data, loaiHinhList = [], hoatDongList = [], medi
     }
 
     if (Array.isArray(hoatDongList)) {
-      for (const hd of hoatDongList) {
-        await client.query(
-          'INSERT INTO DiemThamQuan_HoatDong (madiemtq, mahoatdong, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-          [newDtq.madiemtq, hd.maHoatDong, hd.thuTu || 1, hd.ghiChu || null]
-        );
+      for (let i = 0; i < hoatDongList.length; i++) {
+        const hd = hoatDongList[i];
+        const activityText = (typeof hd === 'string' ? hd : (hd?.ten || hd?.maHoatDong || '')).trim();
+        const ghiChu = typeof hd === 'object' ? (hd?.ghiChu || null) : null;
+        const thuTu = typeof hd === 'object' ? (hd?.thuTu || i + 1) : i + 1;
+        const icon = typeof hd === 'object' ? (hd?.icon || 'sparkles') : 'sparkles';
+
+        if (!activityText) continue;
+
+        let activityId = null;
+        if (/^HD\d+$/i.test(activityText)) {
+          activityId = activityText.toUpperCase();
+        } else {
+          // Tìm theo tên trong bảng HoatDong
+          const findRes = await client.query('SELECT mahoatdong FROM HoatDong WHERE LOWER(ten) = LOWER($1)', [activityText]);
+          if (findRes.rows.length > 0) {
+            activityId = findRes.rows[0].mahoatdong;
+          } else {
+            // Tự động tạo mới vào bảng HoatDong nếu chưa có
+            const insertHdRes = await client.query(
+              'INSERT INTO HoatDong (ten, icon) VALUES ($1, $2) RETURNING mahoatdong',
+              [activityText, icon || 'sparkles']
+            );
+            activityId = insertHdRes.rows[0].mahoatdong;
+          }
+        }
+
+        if (activityId) {
+          await client.query(
+            'INSERT INTO DiemThamQuan_HoatDong (madiemtq, mahoatdong, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT (madiemtq, mahoatdong) DO NOTHING',
+            [newDtq.madiemtq, activityId, thuTu, ghiChu]
+          );
+        }
       }
     }
 
     if (Array.isArray(mediaList)) {
       for (let i = 0; i < mediaList.length; i++) {
         const m = mediaList[i];
-        await client.query(
-          'INSERT INTO MediaDiemThamQuan (madiemtq, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
-          [newDtq.madiemtq, m.thuTu || i + 1, m.url || m, m.type || 'image']
-        );
+        const mediaUrl = typeof m === 'string' ? m : (m?.url || m?.mediaUrl || m?.media_url);
+        const mediaType = typeof m === 'object' ? (m?.type || m?.mediaType || m?.media_type || 'image') : 'image';
+        const thuTu = typeof m === 'object' ? (m?.thuTu || i + 1) : i + 1;
+        if (mediaUrl) {
+          await client.query(
+            'INSERT INTO MediaDiemThamQuan (madiemtq, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
+            [newDtq.madiemtq, thuTu, mediaUrl, mediaType]
+          );
+        }
       }
     }
 
@@ -315,17 +377,24 @@ const updateAttraction = async (maDiemTQ, data, loaiHinhList = null, hoatDongLis
   try {
     await client.query('BEGIN');
 
+    const viDo = (data.viDo !== undefined && data.viDo !== null && data.viDo !== '' && !isNaN(Number(data.viDo)))
+      ? parseFloat(data.viDo)
+      : null;
+    const kinhDo = (data.kinhDo !== undefined && data.kinhDo !== null && data.kinhDo !== '' && !isNaN(Number(data.kinhDo)))
+      ? parseFloat(data.kinhDo)
+      : null;
+
     const updateSql = `
       UPDATE DiemThamQuan
       SET madiadiem = COALESCE($1, madiadiem),
           ten = COALESCE($2, ten),
-          mota = COALESCE($3, mota),
-          vido = COALESCE($4, vido),
-          kinhdo = COALESCE($5, kinhdo),
-          diachi = COALESCE($6, diachi),
-          giave = COALESCE($7, giave),
-          giomocua = COALESCE($8, giomocua),
-          diemnoibat = COALESCE($9, diemnoibat)
+          mota = $3,
+          vido = $4,
+          kinhdo = $5,
+          diachi = $6,
+          giave = $7,
+          giomocua = $8,
+          diemnoibat = $9
       WHERE madiemtq = $10
       RETURNING *
     `;
@@ -333,8 +402,8 @@ const updateAttraction = async (maDiemTQ, data, loaiHinhList = null, hoatDongLis
       data.maDiaDiem,
       data.ten,
       data.moTa,
-      data.viDo,
-      data.kinhDo,
+      viDo,
+      kinhDo,
       data.diaChi,
       data.giaVe,
       data.gioMoCua,
@@ -359,11 +428,39 @@ const updateAttraction = async (maDiemTQ, data, loaiHinhList = null, hoatDongLis
 
     if (Array.isArray(hoatDongList)) {
       await client.query('DELETE FROM DiemThamQuan_HoatDong WHERE madiemtq = $1', [maDiemTQ]);
-      for (const hd of hoatDongList) {
-        await client.query(
-          'INSERT INTO DiemThamQuan_HoatDong (madiemtq, mahoatdong, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-          [maDiemTQ, hd.maHoatDong, hd.thuTu || 1, hd.ghiChu || null]
-        );
+      for (let i = 0; i < hoatDongList.length; i++) {
+        const hd = hoatDongList[i];
+        const activityText = (typeof hd === 'string' ? hd : (hd?.ten || hd?.maHoatDong || '')).trim();
+        const ghiChu = typeof hd === 'object' ? (hd?.ghiChu || null) : null;
+        const thuTu = typeof hd === 'object' ? (hd?.thuTu || i + 1) : i + 1;
+        const icon = typeof hd === 'object' ? (hd?.icon || 'sparkles') : 'sparkles';
+
+        if (!activityText) continue;
+
+        let activityId = null;
+        if (/^HD\d+$/i.test(activityText)) {
+          activityId = activityText.toUpperCase();
+        } else {
+          // Tìm theo tên trong bảng HoatDong
+          const findRes = await client.query('SELECT mahoatdong FROM HoatDong WHERE LOWER(ten) = LOWER($1)', [activityText]);
+          if (findRes.rows.length > 0) {
+            activityId = findRes.rows[0].mahoatdong;
+          } else {
+            // Tự động tạo mới vào bảng HoatDong nếu chưa có
+            const insertHdRes = await client.query(
+              'INSERT INTO HoatDong (ten, icon) VALUES ($1, $2) RETURNING mahoatdong',
+              [activityText, icon || 'sparkles']
+            );
+            activityId = insertHdRes.rows[0].mahoatdong;
+          }
+        }
+
+        if (activityId) {
+          await client.query(
+            'INSERT INTO DiemThamQuan_HoatDong (madiemtq, mahoatdong, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT (madiemtq, mahoatdong) DO NOTHING',
+            [maDiemTQ, activityId, thuTu, ghiChu]
+          );
+        }
       }
     }
 
@@ -371,10 +468,15 @@ const updateAttraction = async (maDiemTQ, data, loaiHinhList = null, hoatDongLis
       await client.query('DELETE FROM MediaDiemThamQuan WHERE madiemtq = $1', [maDiemTQ]);
       for (let i = 0; i < mediaList.length; i++) {
         const m = mediaList[i];
-        await client.query(
-          'INSERT INTO MediaDiemThamQuan (madiemtq, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
-          [maDiemTQ, m.thuTu || i + 1, m.url || m, m.type || 'image']
-        );
+        const mediaUrl = typeof m === 'string' ? m : (m?.url || m?.mediaUrl || m?.media_url);
+        const mediaType = typeof m === 'object' ? (m?.type || m?.mediaType || m?.media_type || 'image') : 'image';
+        const thuTu = typeof m === 'object' ? (m?.thuTu || i + 1) : i + 1;
+        if (mediaUrl) {
+          await client.query(
+            'INSERT INTO MediaDiemThamQuan (madiemtq, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
+            [maDiemTQ, thuTu, mediaUrl, mediaType]
+          );
+        }
       }
     }
 

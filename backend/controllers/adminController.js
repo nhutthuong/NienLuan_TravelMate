@@ -152,10 +152,22 @@ const updateAttraction = async (req, res) => {
   try {
     const { id } = req.params;
     const { maLoaiHinhList, hoatDongList, mediaList, ...data } = req.body;
+
+    const oldAtt = await attractionModel.getById(id);
+    const oldMediaUrls = (oldAtt?.media || []).map((m) => m.url).filter(Boolean);
+
     const updated = await attractionModel.updateAttraction(id, data, maLoaiHinhList, hoatDongList, mediaList);
     if (!updated) {
       return res.status(404).json({ message: 'Khong tim thay diem tham quan can cap nhat' });
     }
+
+    const newMediaUrls = new Set((updated?.media || []).map((m) => m.url).filter(Boolean));
+    for (const oldUrl of oldMediaUrls) {
+      if (!newMediaUrls.has(oldUrl)) {
+        await deleteLocationImageFile(oldUrl);
+      }
+    }
+
     return res.status(200).json({ message: 'Cap nhat diem tham quan thanh cong', data: updated });
   } catch (err) {
     return res.status(500).json({ message: `Loi may chu: ${err.message}` });
@@ -165,10 +177,18 @@ const updateAttraction = async (req, res) => {
 const deleteAttraction = async (req, res) => {
   try {
     const { id } = req.params;
+    const oldAtt = await attractionModel.getById(id);
+    const oldMediaUrls = (oldAtt?.media || []).map((m) => m.url);
+
     const deleted = await attractionModel.deleteAttraction(id);
     if (!deleted) {
       return res.status(404).json({ message: 'Khong tim thay diem tham quan can xoa' });
     }
+
+    for (const url of oldMediaUrls) {
+      if (url) await deleteLocationImageFile(url);
+    }
+
     return res.status(200).json({ message: 'Xoa diem tham quan thanh cong' });
   } catch (err) {
     if (err.code === '23503') {

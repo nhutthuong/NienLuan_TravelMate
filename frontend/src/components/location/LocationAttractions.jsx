@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, ChevronRight, Clock, Heart, Star, Ticket } from 'lucide-react';
+import { Camera, ChevronRight, Clock, Heart, Star, Ticket, Sparkles } from 'lucide-react';
 
 const LocationAttractions = ({
   attractions = [],
@@ -77,6 +77,32 @@ const LocationAttractions = ({
                   <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed mb-3">
                     {spot.diemNoiBat || spot.moTa || 'Điểm check-in nổi bật không thể bỏ qua.'}
                   </p>
+
+                  {/* Hoạt động trải nghiệm đặc sắc */}
+                  {Array.isArray(spot.hoatDong) && spot.hoatDong.length > 0 && (
+                    <div className="mb-3.5">
+                      <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-600" />
+                        <span>Trải nghiệm nổi bật:</span>
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {spot.hoatDong.slice(0, 3).map((act, aIdx) => {
+                          const actName = typeof act === 'string' ? act : act?.ten || '';
+                          const actNote = typeof act === 'object' ? act?.ghiChu : '';
+                          return (
+                            <span
+                              key={aIdx}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200/70 text-xs font-medium"
+                              title={actNote ? `${actName}: ${actNote}` : actName}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="truncate max-w-[170px]">{actName}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Structured Hours & Ticket Info without awkward line wrapping */}

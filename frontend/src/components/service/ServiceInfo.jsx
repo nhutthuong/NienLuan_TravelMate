@@ -6,7 +6,38 @@ import {
   Check,
   Ticket,
   Clock,
+  Waves,
+  Mountain,
+  Footprints,
+  Anchor,
+  Utensils,
+  Sun,
+  Camera,
+  Eye,
+  Landmark,
+  Zap,
+  Bike,
+  MapPin,
+  ExternalLink,
 } from 'lucide-react';
+
+const getActivityIcon = (iconName) => {
+  switch (iconName) {
+    case 'waves': return <Waves className="w-4 h-4 text-sky-600" />;
+    case 'mountain': return <Mountain className="w-4 h-4 text-emerald-600" />;
+    case 'footprints': return <Footprints className="w-4 h-4 text-amber-600" />;
+    case 'anchor': return <Anchor className="w-4 h-4 text-blue-600" />;
+    case 'utensils': return <Utensils className="w-4 h-4 text-rose-600" />;
+    case 'compass': return <Compass className="w-4 h-4 text-teal-600" />;
+    case 'sun': return <Sun className="w-4 h-4 text-amber-500" />;
+    case 'camera': return <Camera className="w-4 h-4 text-purple-600" />;
+    case 'eye': return <Eye className="w-4 h-4 text-indigo-600" />;
+    case 'landmark': return <Landmark className="w-4 h-4 text-yellow-700" />;
+    case 'zap': return <Zap className="w-4 h-4 text-orange-500" />;
+    case 'bike': return <Bike className="w-4 h-4 text-green-600" />;
+    default: return <Sparkles className="w-4 h-4 text-amber-500" />;
+  }
+};
 
 const ServiceInfo = ({ data, isHotel, isAttraction }) => {
   return (
@@ -108,30 +139,69 @@ const ServiceInfo = ({ data, isHotel, isAttraction }) => {
 
             {Array.isArray(data.hoatDong) && data.hoatDong.length > 0 && (
               <div>
-                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">
-                  Các trải nghiệm nổi bật:
+                <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <span>Hoạt động &amp; Trải nghiệm nổi bật:</span>
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {data.hoatDong.map((act, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 p-3 bg-sky-50/50 rounded-2xl border border-sky-100/60"
+                      className="flex items-start gap-3 p-3.5 bg-amber-50/40 rounded-2xl border border-amber-100 hover:border-amber-300 transition-all shadow-xs"
                     >
-                      <div className="mt-0.5 w-6 h-6 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="w-3.5 h-3.5" />
+                      <div className="mt-0.5 w-8 h-8 rounded-xl bg-white border border-amber-200/80 shadow-xs flex items-center justify-center flex-shrink-0">
+                        {getActivityIcon(act.icon)}
                       </div>
-                      <div>
-                        <span className="text-gray-800 font-semibold text-sm block">
+                      <div className="min-w-0">
+                        <span className="text-gray-900 font-bold text-sm block leading-snug">
                           {act.ten}
                         </span>
                         {act.ghiChu && (
-                          <span className="text-xs text-gray-500 block mt-0.5">
+                          <span className="text-xs text-gray-600 block mt-1 leading-relaxed">
                             {act.ghiChu}
                           </span>
                         )}
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bản đồ định vị GPS từ CSDL */}
+            {data.viDo && data.kinhDo && (
+              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 shadow-2xs">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Vị trí định vị GPS trên bản đồ
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                      {Number(data.viDo).toFixed(4)}°N, {Number(data.kinhDo).toFixed(4)}°E
+                    </span>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps?q=${data.viDo},${data.kinhDo}+(${encodeURIComponent(data.ten)})&hl=vi`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 hover:underline cursor-pointer"
+                  >
+                    <span>Mở Google Maps</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+                <div className="w-full h-56 sm:h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${data.viDo},${data.kinhDo}&hl=vi&z=15&output=embed`}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title={`Bản đồ ${data.ten}`}
+                  />
                 </div>
               </div>
             )}

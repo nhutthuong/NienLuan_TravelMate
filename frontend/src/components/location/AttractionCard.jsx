@@ -141,9 +141,31 @@ const AttractionCard = ({
 
           {/* Highlight / Description */}
           {highlight && (
-            <p className="text-slate-500 text-xs sm:text-sm line-clamp-2 leading-relaxed mb-4">
+            <p className="text-slate-500 text-xs sm:text-sm line-clamp-2 leading-relaxed mb-3">
               {highlight}
             </p>
+          )}
+
+          {/* Activities / Experiences */}
+          {Array.isArray(spot.hoatDong) && spot.hoatDong.length > 0 && (
+            <div className="mb-3">
+              <div className="flex flex-wrap gap-1.5">
+                {spot.hoatDong.slice(0, 3).map((act, aIdx) => {
+                  const actName = typeof act === 'string' ? act : act?.ten || '';
+                  const actNote = typeof act === 'object' ? act?.ghiChu : '';
+                  return (
+                    <span
+                      key={aIdx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/70 text-[11px] font-medium"
+                      title={actNote ? `${actName}: ${actNote}` : actName}
+                    >
+                      <Sparkles size={10} className="text-amber-500 shrink-0" />
+                      <span className="truncate max-w-[140px]">{actName}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 
