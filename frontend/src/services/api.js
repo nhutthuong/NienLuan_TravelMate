@@ -134,6 +134,10 @@ export const api = {
     getAll: (params) => get('/attractions', params),
     getById: (id) => get(`/attractions/${id}`),
     addReview: (id, payload) => post(`/attractions/${id}/reviews`, payload),
+    updateReview: (id, reviewId, payload) =>
+      put(reviewId ? `/attractions/${id}/reviews/${reviewId}` : `/attractions/${id}/reviews`, payload),
+    deleteReview: (id, reviewId) =>
+      del(reviewId ? `/attractions/${id}/reviews/${reviewId}` : `/attractions/${id}/reviews`),
   },
 
   // Hotels
@@ -141,6 +145,10 @@ export const api = {
     getAll: (params) => get('/hotels', params),
     getById: (id) => get(`/hotels/${id}`),
     addReview: (id, payload) => post(`/hotels/${id}/reviews`, payload),
+    updateReview: (id, reviewId, payload) =>
+      put(reviewId ? `/hotels/${id}/reviews/${reviewId}` : `/hotels/${id}/reviews`, payload),
+    deleteReview: (id, reviewId) =>
+      del(reviewId ? `/hotels/${id}/reviews/${reviewId}` : `/hotels/${id}/reviews`),
   },
 
   // AI Prediction

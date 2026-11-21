@@ -267,6 +267,16 @@ const getSuggestedHotels = async (maDiaDiem, currentUserId = null, limit = 6) =>
   return getAllHotels({ maDiaDiem }, currentUserId).then((list) => list.slice(0, limit));
 };
 
+const addReview = async (maNguoiDung, maKhachSan, danhGia, binhLuan) => {
+  const insertSql = `
+    INSERT INTO DanhGiaKhachSan (manguoidung, makhachsan, danhgia, binhluan, trangthai)
+    VALUES ($1, $2, $3, $4, 'Approved')
+    RETURNING *
+  `;
+  const res = await query(insertSql, [maNguoiDung, maKhachSan, danhGia, binhLuan]);
+  return res.rows[0];
+};
+
 const upsertReview = async (maNguoiDung, maKhachSan, danhGia, binhLuan) => {
   const checkSql = 'SELECT madanhgiaks FROM DanhGiaKhachSan WHERE manguoidung = $1 AND makhachsan = $2';
   const checkRes = await query(checkSql, [maNguoiDung, maKhachSan]);
@@ -289,6 +299,44 @@ const upsertReview = async (maNguoiDung, maKhachSan, danhGia, binhLuan) => {
   `;
   const res = await query(insertSql, [maNguoiDung, maKhachSan, danhGia, binhLuan]);
   return res.rows[0];
+};
+
+const updateUserReview = async (maNguoiDung, maKhachSan, danhGia, binhLuan, maDanhGia = null) => {
+  let updateSql;
+  let params;
+  if (maDanhGia) {
+    updateSql = `
+      UPDATE DanhGiaKhachSan
+      SET danhgia = $1, binhluan = $2, trangthai = 'Approved', created_at = CURRENT_TIMESTAMP
+      WHERE manguoidung = $3 AND madanhgiaks = $4
+      RETURNING *
+    `;
+    params = [danhGia, binhLuan, maNguoiDung, maDanhGia];
+  } else {
+    updateSql = `
+      UPDATE DanhGiaKhachSan
+      SET danhgia = $1, binhluan = $2, trangthai = 'Approved', created_at = CURRENT_TIMESTAMP
+      WHERE manguoidung = $3 AND makhachsan = $4
+      RETURNING *
+    `;
+    params = [danhGia, binhLuan, maNguoiDung, maKhachSan];
+  }
+  const res = await query(updateSql, params);
+  return res.rows[0] || null;
+};
+
+const deleteUserReview = async (maNguoiDung, maKhachSan, maDanhGia = null) => {
+  let deleteSql;
+  let params;
+  if (maDanhGia) {
+    deleteSql = 'DELETE FROM DanhGiaKhachSan WHERE manguoidung = $1 AND madanhgiaks = $2 RETURNING *';
+    params = [maNguoiDung, maDanhGia];
+  } else {
+    deleteSql = 'DELETE FROM DanhGiaKhachSan WHERE manguoidung = $1 AND makhachsan = $2 RETURNING *';
+    params = [maNguoiDung, maKhachSan];
+  }
+  const res = await query(deleteSql, params);
+  return res.rows[0] || null;
 };
 
 const createHotel = async (data, loaiHinhList = [], tienNghiList = [], mediaList = []) => {
@@ -446,7 +494,10 @@ module.exports = {
   getAllHotels,
   getById,
   getSuggestedHotels,
+  addReview,
   upsertReview,
+  updateUserReview,
+  deleteUserReview,
   createHotel,
   updateHotel,
   deleteHotel,

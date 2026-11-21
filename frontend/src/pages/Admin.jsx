@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
 import {
-  INITIAL_DESTINATIONS,
-  INITIAL_SERVICES,
-  INITIAL_CHECKIN_SPOTS,
-  INITIAL_USERS,
-  INITIAL_REVIEWS
-} from '../components/admin/adminMockData';
+  AlertTriangle,
+  Trash2,
+  X,
+  Loader2,
+  Sparkles,
+  ShieldAlert,
+  AlertCircle,
+  Edit3,
+  Lock,
+  Unlock
+} from 'lucide-react';
 
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -28,13 +32,27 @@ const Admin = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Data States
-  const [destinations, setDestinations] = useState(INITIAL_DESTINATIONS);
-  const [services, setServices] = useState(INITIAL_SERVICES);
-  const [checkInSpots, setCheckInSpots] = useState(INITIAL_CHECKIN_SPOTS);
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
-  const [users, setUsers] = useState(INITIAL_USERS);
+  // Data States (khoi tao rong, 100% du lieu dong bo truc tiep tu Co so du lieu)
+  const [destinations, setDestinations] = useState([]);
+  const [services, setServices] = useState([]);
+  const [checkInSpots, setCheckInSpots] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
+  // Modals thông báo & xác nhận lịch sự thay cho alert / confirm
+  const [aiProtectedDest, setAiProtectedDest] = useState(null); // Khi bấm xóa 10 địa danh gốc AI
+  const [destToDelete, setDestToDelete] = useState(null);       // Khi xác nhận xóa địa danh mở rộng
+  const [isDeletingDest, setIsDeletingDest] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState(null); // Khi xác nhận xóa khách sạn
+  const [isDeletingService, setIsDeletingService] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);   // Khi xác nhận xóa bình luận
+  const [isDeletingReview, setIsDeletingReview] = useState(false);
+  const [adminProtectedNotice, setAdminProtectedNotice] = useState(false); // Khi cố khóa Admin khác
+  const [userToToggle, setUserToToggle] = useState(null);       // Khi xác nhận khóa / mở khóa tài khoản
+  const [isTogglingUser, setIsTogglingUser] = useState(false);
+  const [generalNotice, setGeneralNotice] = useState(null);     // Thông báo lỗi/cảnh báo lịch sự { title, message }
 
   // Modals & Form States: Địa danh
   const [editingDestination, setEditingDestination] = useState(null);
@@ -98,152 +116,148 @@ const Admin = () => {
   // ================= NẠP DỮ LIỆU TỪ BACKEND API =================
   useEffect(() => {
     let isMounted = true;
+    setIsDataLoading(true);
 
-    // 0. Tải danh mục loại hình du lịch và danh mục hoạt động
-    if (typeof api.locations?.getCategories === 'function') {
-      api.locations.getCategories()
-        .then((cats) => {
-          if (isMounted && Array.isArray(cats)) {
-            setAllCategories(cats);
-          }
-        })
-        .catch(() => {});
-    }
-    if (typeof api.locations?.getActivities === 'function') {
-      api.locations.getActivities()
-        .then((acts) => {
-          if (isMounted && Array.isArray(acts)) {
-            setAllActivities(acts);
-          }
-        })
-        .catch(() => {});
-    }
+    const loadAllData = async () => {
+      try {
+        const [catsRes, actsRes, locsRes, attsRes, hotsRes, revsRes, usrsRes, statsRes] = await Promise.allSettled([
+          api.locations?.getCategories ? api.locations.getCategories() : Promise.resolve([]),
+          api.locations?.getActivities ? api.locations.getActivities() : Promise.resolve([]),
+          api.locations.getAll(),
+          api.attractions.getAll(),
+          api.hotels.getAll(),
+          api.admin.getReviews(),
+          api.admin.getUsers(),
+          api.admin.getStats(),
+        ]);
 
-    // 1. Tải danh sách địa danh
-    api.locations.getAll()
-      .then((data) => {
-        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
-        const mapped = data.map((loc) => ({
-          id: loc.maDiaDiem || loc.id,
-          name: loc.ten || loc.tenDiaDiem || loc.name,
-          province: loc.tinhThanh || loc.location || '',
-          danhHieu: loc.danhHieu || '',
-          moTa: loc.moTa || loc.desc || '',
-          viDo: loc.viDo !== undefined && loc.viDo !== null ? loc.viDo : '',
-          kinhDo: loc.kinhDo !== undefined && loc.kinhDo !== null ? loc.kinhDo : '',
-          quyMo: loc.quyMo || '',
-          thoiDiemLyTuong: loc.thoiDiemLyTuong || '',
-          image: loc.anhUrl || loc.anh_url || loc.hinhAnh || loc.image || '/images/vinh_ha_long.jpg',
-          categories: Array.isArray(loc.loaiHinh) ? loc.loaiHinh : [],
-          maLoaiHinhList: Array.isArray(loc.maLoaiHinh) ? loc.maLoaiHinh : [],
-          category: (Array.isArray(loc.loaiHinh) && loc.loaiHinh[0]) || loc.theLoai || loc.category || 'Thiên nhiên',
-          totalHotels: loc.totalHotels || 0,
-          totalAttractions: loc.totalAttractions || 0,
-          status: 'Active',
-        }));
-        setDestinations(mapped);
-      })
-      .catch(() => {});
+        if (!isMounted) return;
 
-    // 2. Tải danh sách điểm tham quan con
-    api.attractions.getAll()
-      .then((data) => {
-        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
-        const mapped = data.map((att) => ({
-          id: att.maDiemTQ || att.id,
-          name: att.ten || att.name,
-          locationId: att.maDiaDiem || att.locationId,
-          locationName: att.tenDiaDiem || '',
-          desc: att.moTa || att.desc || '',
-          diemNoiBat: att.diemNoiBat || '',
-          diaChi: att.diaChi || '',
-          viDo: att.viDo !== undefined && att.viDo !== null ? att.viDo : '',
-          kinhDo: att.kinhDo !== undefined && att.kinhDo !== null ? att.kinhDo : '',
-          image: att.anhDaiDien || att.hinhAnh || att.image || '/images/vinh_ha_long.jpg',
-          ticketPrice: att.giaVe || att.ticketPrice || 'Miễn phí',
-          bestTime: att.gioMoCua || att.bestTime || '08:00 – 17:00',
-          loaiHinh: Array.isArray(att.loaiHinh) ? att.loaiHinh : [],
-          maLoaiHinhList: Array.isArray(att.maLoaiHinh) ? att.maLoaiHinh : [],
-          hoatDongList: Array.isArray(att.hoatDong) ? att.hoatDong : [],
-        }));
-        setCheckInSpots(mapped);
-      })
-      .catch(() => {});
-
-    // 3. Tải danh sách khách sạn / dịch vụ
-    api.hotels.getAll()
-      .then((data) => {
-        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
-        const mapped = data.map((hotel) => ({
-          id: hotel.maKhachSan || hotel.id,
-          name: hotel.ten || hotel.name,
-          locationId: hotel.maDiaDiem || hotel.locationId,
-          locationName: hotel.tenDiaDiem || '',
-          tags: Array.isArray(hotel.loaiHinh) && hotel.loaiHinh.length > 0 ? hotel.loaiHinh : ['Nghỉ dưỡng'],
-          price: hotel.giaThamKhao ? new Intl.NumberFormat('vi-VN').format(hotel.giaThamKhao) + 'đ' : (hotel.price || '1.500.000đ'),
-          rating: parseFloat(hotel.diemDanhGia || hotel.soSao || hotel.rating || 4.8),
-          image: hotel.anhDaiDien || hotel.hinhAnh || hotel.image || '/images/mui_ne.jpg',
-          coreAmenities: Array.isArray(hotel.tienNghi) && hotel.tienNghi.length > 0 ? hotel.tienNghi : ['Hồ bơi ngoài trời', 'Spa thư giãn'],
-          affiliateUrl: hotel.bookingUrl || hotel.affiliateUrl || 'https://www.agoda.com',
-          status: 'Active',
-        }));
-        setServices(mapped);
-      })
-      .catch(() => {});
-
-    // 4. Tải danh sách đánh giá & bình luận kiểm duyệt
-    api.admin.getReviews()
-      .then((res) => {
-        if (!isMounted || !res) return;
-        const list = res.data || (Array.isArray(res) ? res : []);
-        if (list.length > 0) {
-          const mapped = list.map((r) => ({
-            id: r.id,
-            targetType: r.targetType || r.target_type || 'hotel',
-            targetId: r.targetId || r.target_id,
-            targetName: r.targetName || r.target_name || '',
-            locationName: r.locationName || r.location_name || '',
-            userName: r.userName || r.user_name || 'Người dùng',
-            userEmail: r.userEmail || r.user_email || '',
-            userAvatar: r.userAvatar || r.user_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop',
-            rating: parseFloat(r.rating || 5.0),
-            comment: r.comment || '',
-            createdAt: r.createdAt ? (typeof r.createdAt === 'string' && r.createdAt.includes('/') ? r.createdAt : new Date(r.createdAt).toLocaleString('vi-VN')) : '20/10/2026',
-            status: r.status || 'Approved',
-          }));
-          setReviews(mapped);
+        // 0. Danh mục loại hình & Hoạt động
+        if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
+          setAllCategories(catsRes.value);
         }
-      })
-      .catch(() => {});
-
-    // 5. Tải danh sách người dùng
-    api.admin.getUsers()
-      .then((res) => {
-        if (!isMounted || !res) return;
-        const list = res.users || (Array.isArray(res) ? res : []);
-        if (list.length > 0) {
-          const mapped = list.map((u) => ({
-            id: u.manguoidung || u.id,
-            name: u.hoten || u.name,
-            email: u.email,
-            role: u.vaitro || u.role || 'Member',
-            scansCount: u.scansCount || 0,
-            wishlistCount: u.wishlistCount || 0,
-            joinedDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : (u.joinedDate || '01/01/2026'),
-            status: u.trangthai || u.status || 'Active',
-          }));
-          setUsers(mapped);
+        if (actsRes.status === 'fulfilled' && Array.isArray(actsRes.value)) {
+          setAllActivities(actsRes.value);
         }
-      })
-      .catch(() => {});
 
-    // 6. Tải số liệu thống kê Admin
-    api.admin.getStats()
-      .then((data) => {
-        if (!isMounted || !data) return;
-        setStats(data);
-      })
-      .catch(() => {});
+        // 1. Danh sách địa danh
+        if (locsRes.status === 'fulfilled' && Array.isArray(locsRes.value)) {
+          const mappedLocs = locsRes.value.map((loc) => ({
+            id: loc.maDiaDiem || loc.id,
+            name: loc.ten || loc.tenDiaDiem || loc.name,
+            province: loc.tinhThanh || loc.location || '',
+            danhHieu: loc.danhHieu || '',
+            moTa: loc.moTa || loc.desc || '',
+            viDo: loc.viDo !== undefined && loc.viDo !== null ? loc.viDo : '',
+            kinhDo: loc.kinhDo !== undefined && loc.kinhDo !== null ? loc.kinhDo : '',
+            quyMo: loc.quyMo || '',
+            thoiDiemLyTuong: loc.thoiDiemLyTuong || '',
+            image: loc.anhUrl || loc.anh_url || loc.hinhAnh || loc.image || '/images/vinh_ha_long.jpg',
+            categories: Array.isArray(loc.loaiHinh) ? loc.loaiHinh : [],
+            maLoaiHinhList: Array.isArray(loc.maLoaiHinh) ? loc.maLoaiHinh : [],
+            category: (Array.isArray(loc.loaiHinh) && loc.loaiHinh[0]) || loc.theLoai || loc.category || 'Thiên nhiên',
+            totalHotels: loc.totalHotels || 0,
+            totalAttractions: loc.totalAttractions || 0,
+            status: 'Active',
+          }));
+          setDestinations(mappedLocs);
+        }
+
+        // 2. Điểm tham quan con
+        if (attsRes.status === 'fulfilled' && Array.isArray(attsRes.value)) {
+          const mappedAtts = attsRes.value.map((att) => ({
+            id: att.maDiemTQ || att.id,
+            name: att.ten || att.name,
+            locationId: att.maDiaDiem || att.locationId,
+            locationName: att.tenDiaDiem || '',
+            desc: att.moTa || att.desc || '',
+            diemNoiBat: att.diemNoiBat || '',
+            diaChi: att.diaChi || '',
+            viDo: att.viDo !== undefined && att.viDo !== null ? att.viDo : '',
+            kinhDo: att.kinhDo !== undefined && att.kinhDo !== null ? att.kinhDo : '',
+            image: att.anhDaiDien || att.hinhAnh || att.image || '/images/vinh_ha_long.jpg',
+            ticketPrice: att.giaVe || att.ticketPrice || 'Miễn phí',
+            bestTime: att.gioMoCua || att.bestTime || '08:00 – 17:00',
+            loaiHinh: Array.isArray(att.loaiHinh) ? att.loaiHinh : [],
+            maLoaiHinhList: Array.isArray(att.maLoaiHinh) ? att.maLoaiHinh : [],
+            hoatDongList: Array.isArray(att.hoatDong) ? att.hoatDong : [],
+          }));
+          setCheckInSpots(mappedAtts);
+        }
+
+        // 3. Khách sạn
+        if (hotsRes.status === 'fulfilled' && Array.isArray(hotsRes.value)) {
+          const mappedHots = hotsRes.value.map((hotel) => ({
+            id: hotel.maKhachSan || hotel.id,
+            name: hotel.ten || hotel.name,
+            locationId: hotel.maDiaDiem || hotel.locationId,
+            locationName: hotel.tenDiaDiem || '',
+            tags: Array.isArray(hotel.loaiHinh) && hotel.loaiHinh.length > 0 ? hotel.loaiHinh : ['Nghỉ dưỡng'],
+            price: hotel.giaThamKhao ? new Intl.NumberFormat('vi-VN').format(hotel.giaThamKhao) + 'đ' : (hotel.price || '1.500.000đ'),
+            rating: parseFloat(hotel.diemDanhGia || hotel.soSao || hotel.rating || 4.8),
+            image: hotel.anhDaiDien || hotel.hinhAnh || hotel.image || '/images/mui_ne.jpg',
+            coreAmenities: Array.isArray(hotel.tienNghi) && hotel.tienNghi.length > 0 ? hotel.tienNghi : ['Hồ bơi ngoài trời', 'Spa thư giãn'],
+            affiliateUrl: hotel.bookingUrl || hotel.affiliateUrl || 'https://www.agoda.com',
+            status: 'Active',
+          }));
+          setServices(mappedHots);
+        }
+
+        // 4. Đánh giá & kiểm duyệt
+        if (revsRes.status === 'fulfilled' && revsRes.value) {
+          const list = revsRes.value.data || (Array.isArray(revsRes.value) ? revsRes.value : []);
+          if (list.length > 0) {
+            const mappedRevs = list.map((r) => ({
+              id: r.id,
+              targetType: r.targetType || r.target_type || 'hotel',
+              targetId: r.targetId || r.target_id,
+              targetName: r.targetName || r.target_name || '',
+              locationName: r.locationName || r.location_name || '',
+              userName: r.userName || r.user_name || 'Người dùng',
+              userEmail: r.userEmail || r.user_email || '',
+              userAvatar: r.userAvatar || r.user_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop',
+              rating: parseFloat(r.rating || 5.0),
+              comment: r.comment || '',
+              createdAt: r.createdAt ? (typeof r.createdAt === 'string' && r.createdAt.includes('/') ? r.createdAt : new Date(r.createdAt).toLocaleString('vi-VN')) : '20/10/2026',
+              status: r.status || 'Approved',
+            }));
+            setReviews(mappedRevs);
+          }
+        }
+
+        // 5. Danh sách người dùng
+        if (usrsRes.status === 'fulfilled' && usrsRes.value) {
+          const list = usrsRes.value.users || (Array.isArray(usrsRes.value) ? usrsRes.value : []);
+          if (list.length > 0) {
+            const mappedUsrs = list.map((u) => ({
+              id: u.manguoidung || u.id,
+              name: u.hoten || u.name,
+              email: u.email,
+              role: u.vaitro || u.role || 'Member',
+              scansCount: u.scansCount || 0,
+              wishlistCount: u.wishlistCount || 0,
+              joinedDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : (u.joinedDate || '01/01/2026'),
+              status: u.trangthai || u.status || 'Active',
+            }));
+            setUsers(mappedUsrs);
+          }
+        }
+
+        // 6. Số liệu thống kê
+        if (statsRes.status === 'fulfilled' && statsRes.value) {
+          setStats(statsRes.value);
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải dữ liệu trang quản trị từ CSDL:', err);
+      } finally {
+        if (isMounted) {
+          setIsDataLoading(false);
+        }
+      }
+    };
+
+    loadAllData();
 
     return () => {
       isMounted = false;
@@ -332,7 +346,10 @@ const Admin = () => {
       };
 
       if (!payload.ten || !payload.tinhThanh) {
-        alert('Tên địa danh và Tỉnh/Thành phố là bắt buộc.');
+        setGeneralNotice({
+          title: 'Thông tin chưa đầy đủ',
+          message: 'Tên địa danh và Tỉnh/Thành phố là hai trường thông tin bắt buộc.'
+        });
         setIsSavingDest(false);
         return;
       }
@@ -386,13 +403,16 @@ const Admin = () => {
       }
       setIsDestModalOpen(false);
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu thông tin địa danh.');
+      setGeneralNotice({
+        title: 'Lỗi khi lưu thông tin địa danh',
+        message: err.message || 'Không thể lưu thông tin địa danh vào cơ sở dữ liệu.'
+      });
     } finally {
       setIsSavingDest(false);
     }
   };
 
-  const handleDeleteDestination = async (id) => {
+  const handleDeleteDestination = (id) => {
     const isAi = (typeof id === 'number' && id <= 10) ||
       (typeof id === 'string' && (
         ['DD0001', 'DD0002', 'DD0003', 'DD0004', 'DD0005', 'DD0006', 'DD0007', 'DD0008', 'DD0009', 'DD0010'].includes(id) ||
@@ -400,18 +420,33 @@ const Admin = () => {
         (parseInt(id, 10) <= 10)
       ));
 
+    const targetDest = destinations.find(d => String(d.id) === String(id)) || {
+      id,
+      name: `Địa danh #${id}`,
+    };
+
     if (isAi) {
-      alert('Theo tài liệu đặc tả hệ thống (AGENT.md & PROJECT_OVERVIEW.md), 10 địa danh gốc gắn liền với mô hình AI ResNet50 (DD0001 - DD0010) chỉ được phép chỉnh sửa thông tin, không được phép xóa khỏi cơ sở dữ liệu!');
+      setAiProtectedDest(targetDest);
       return;
     }
 
-    if (window.confirm('Bạn có chắc chắn muốn xóa địa điểm du lịch mở rộng này khỏi danh mục hệ thống?')) {
-      try {
-        await api.admin.deleteLocation(id);
-        setDestinations(prev => prev.filter(d => String(d.id) !== String(id)));
-      } catch (err) {
-        alert(err.message || 'Không thể xóa địa danh.');
-      }
+    setDestToDelete(targetDest);
+  };
+
+  const handleConfirmDeleteDestination = async () => {
+    if (!destToDelete) return;
+    try {
+      setIsDeletingDest(true);
+      await api.admin.deleteLocation(destToDelete.id);
+      setDestinations(prev => prev.filter(d => String(d.id) !== String(destToDelete.id)));
+      setDestToDelete(null);
+    } catch (err) {
+      setGeneralNotice({
+        title: 'Không thể xóa địa danh',
+        message: err.message || 'Đã xảy ra lỗi khi xóa địa danh khỏi hệ thống.'
+      });
+    } finally {
+      setIsDeletingDest(false);
     }
   };
 
@@ -521,11 +556,17 @@ const Admin = () => {
   const handleSaveCheckIn = async (e) => {
     e.preventDefault();
     if (!checkInForm.name || !checkInForm.name.trim()) {
-      alert('Vui lòng nhập tên điểm tham quan.');
+      setGeneralNotice({
+        title: 'Thông tin chưa đầy đủ',
+        message: 'Vui lòng nhập tên điểm tham quan.'
+      });
       return;
     }
     if (!checkInForm.locationId) {
-      alert('Vui lòng chọn địa danh trực thuộc.');
+      setGeneralNotice({
+        title: 'Thông tin chưa đầy đủ',
+        message: 'Vui lòng chọn địa danh trực thuộc cho điểm tham quan.'
+      });
       return;
     }
 
@@ -667,7 +708,10 @@ const Admin = () => {
       }
       setIsCheckInModalOpen(false);
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu điểm check-in.');
+      setGeneralNotice({
+        title: 'Lỗi khi lưu điểm check-in',
+        message: err.message || 'Đã xảy ra lỗi khi lưu thông tin điểm tham quan.'
+      });
     } finally {
       setIsSavingCheckIn(false);
     }
@@ -691,7 +735,10 @@ const Admin = () => {
       setCheckInSpots((prev) => prev.filter((c) => String(c.id) !== String(spotToDelete.id)));
       setSpotToDelete(null);
     } catch (err) {
-      alert(err.message || 'Không thể xóa điểm check-in.');
+      setGeneralNotice({
+        title: 'Không thể xóa điểm check-in',
+        message: err.message || 'Đã xảy ra lỗi khi xóa điểm tham quan khỏi hệ thống.'
+      });
     } finally {
       setIsDeletingCheckIn(false);
     }
@@ -760,18 +807,34 @@ const Admin = () => {
       }
       setIsServiceModalOpen(false);
     } catch (err) {
-      alert(err.message || 'Lỗi khi lưu thông tin khách sạn.');
+      setGeneralNotice({
+        title: 'Lỗi khi lưu thông tin khách sạn',
+        message: err.message || 'Không thể lưu thông tin khách sạn vào cơ sở dữ liệu.'
+      });
     }
   };
 
-  const handleDeleteService = async (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa khách sạn / dịch vụ này?')) {
-      try {
-        await api.admin.deleteHotel(id);
-        setServices(prev => prev.filter(s => String(s.id) !== String(id)));
-      } catch (err) {
-        alert(err.message || 'Không thể xóa khách sạn.');
-      }
+  const handleDeleteService = (id) => {
+    const target = services.find(s => String(s.id) === String(id));
+    if (target) {
+      setServiceToDelete(target);
+    }
+  };
+
+  const handleConfirmDeleteService = async () => {
+    if (!serviceToDelete) return;
+    try {
+      setIsDeletingService(true);
+      await api.admin.deleteHotel(serviceToDelete.id);
+      setServices(prev => prev.filter(s => String(s.id) !== String(serviceToDelete.id)));
+      setServiceToDelete(null);
+    } catch (err) {
+      setGeneralNotice({
+        title: 'Không thể xóa khách sạn / dịch vụ',
+        message: err.message || 'Đã xảy ra lỗi khi xóa khách sạn khỏi hệ thống.'
+      });
+    } finally {
+      setIsDeletingService(false);
     }
   };
 
@@ -784,39 +847,67 @@ const Admin = () => {
       await api.admin.updateReviewStatus(rev.targetType || 'hotel', reviewId, nextStatus);
       setReviews(prev => prev.map(r => String(r.id) === String(reviewId) ? { ...r, status: nextStatus } : r));
     } catch (err) {
-      alert(err.message || 'Lỗi khi cập nhật trạng thái kiểm duyệt.');
+      setGeneralNotice({
+        title: 'Lỗi khi cập nhật kiểm duyệt',
+        message: err.message || 'Không thể thay đổi trạng thái kiểm duyệt của đánh giá này.'
+      });
     }
   };
 
-  const handleDeleteReview = async (reviewId) => {
+  const handleDeleteReview = (reviewId) => {
     const rev = reviews.find(r => String(r.id) === String(reviewId));
-    if (!rev) return;
-    if (window.confirm('Bạn có chắc chắn muốn xóa bình luận này vĩnh viễn?')) {
-      try {
-        await api.admin.deleteReview(rev.targetType || 'hotel', reviewId);
-        setReviews(prev => prev.filter(r => String(r.id) !== String(reviewId)));
-      } catch (err) {
-        alert(err.message || 'Không thể xóa bình luận.');
-      }
+    if (rev) {
+      setReviewToDelete(rev);
+    }
+  };
+
+  const handleConfirmDeleteReview = async () => {
+    if (!reviewToDelete) return;
+    try {
+      setIsDeletingReview(true);
+      await api.admin.deleteReview(reviewToDelete.targetType || 'hotel', reviewToDelete.id);
+      setReviews(prev => prev.filter(r => String(r.id) !== String(reviewToDelete.id)));
+      setReviewToDelete(null);
+    } catch (err) {
+      setGeneralNotice({
+        title: 'Không thể xóa đánh giá',
+        message: err.message || 'Đã xảy ra lỗi khi xóa đánh giá của người dùng.'
+      });
+    } finally {
+      setIsDeletingReview(false);
     }
   };
 
   // ================= 5. XỬ LÝ NGƯỜI DÙNG & KHÓA TÀI KHOẢN =================
-  const handleToggleUserBan = async (userId) => {
-    const targetUser = users.find(u => String(u.id) === String(userId));
+  const handleToggleUserBan = (userIdOrUser) => {
+    const targetUser = typeof userIdOrUser === 'object' && userIdOrUser !== null
+      ? userIdOrUser
+      : users.find(u => String(u.id) === String(userIdOrUser));
     if (!targetUser) return;
 
     if (targetUser.role === 'Admin') {
-      alert('Không thể khóa tài khoản của Quản trị viên khác!');
+      setAdminProtectedNotice(true);
       return;
     }
 
-    const nextStatus = targetUser.status === 'Active' ? 'Banned' : 'Active';
+    setUserToToggle(targetUser);
+  };
+
+  const handleConfirmToggleUserBan = async () => {
+    if (!userToToggle) return;
     try {
-      await api.admin.updateUserStatus(userId, nextStatus);
-      setUsers(prev => prev.map(u => String(u.id) === String(userId) ? { ...u, status: nextStatus } : u));
+      setIsTogglingUser(true);
+      const nextStatus = userToToggle.status === 'Active' ? 'Banned' : 'Active';
+      await api.admin.updateUserStatus(userToToggle.id, nextStatus);
+      setUsers(prev => prev.map(u => String(u.id) === String(userToToggle.id) ? { ...u, status: nextStatus } : u));
+      setUserToToggle(null);
     } catch (err) {
-      alert(err.message || 'Lỗi khi cập nhật trạng thái người dùng.');
+      setGeneralNotice({
+        title: 'Cập nhật trạng thái người dùng thất bại',
+        message: err.message || 'Không thể thay đổi trạng thái hoạt động của tài khoản này.'
+      });
+    } finally {
+      setIsTogglingUser(false);
     }
   };
 
@@ -855,6 +946,7 @@ const Admin = () => {
         <main className="p-6 sm:p-8 space-y-6 flex-1 bg-slate-50">
           {/* Top Metric Cards */}
           <AdminMetrics
+            stats={stats}
             destinationsCount={destinations.length}
             servicesCount={services.length}
             reviewsCount={reviews.length}
@@ -864,82 +956,99 @@ const Admin = () => {
             bannedUsersCount={bannedUsersCount}
           />
 
-          {/* TAB 1: 10 Địa danh */}
-          {activeTab === 'destinations' && (
-            <DestinationsTab
-              destinations={destinations.filter(d =>
-                d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.province.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                d.category.toLowerCase().includes(searchQuery.toLowerCase())
+          {isDataLoading ? (
+            <div className="flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-slate-200/90 shadow-xs">
+              <Loader2 className="w-9 h-9 text-sky-600 animate-spin mb-3" />
+              <p className="text-sm font-semibold text-slate-700">Đang đồng bộ dữ liệu từ Cơ sở dữ liệu...</p>
+              <p className="text-xs text-slate-400 mt-1">Đang tải danh mục địa danh, dịch vụ và thành viên</p>
+            </div>
+          ) : (
+            <>
+              {/* TAB 1: 10 Địa danh */}
+              {activeTab === 'destinations' && (
+                <DestinationsTab
+                  destinations={destinations.filter(d => {
+                    const q = searchQuery.trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      (d.name && d.name.toLowerCase().includes(q)) ||
+                      (d.province && d.province.toLowerCase().includes(q)) ||
+                      (d.danhHieu && d.danhHieu.toLowerCase().includes(q)) ||
+                      (d.category && d.category.toLowerCase().includes(q)) ||
+                      (Array.isArray(d.categories) && d.categories.some(c => c && c.toLowerCase().includes(q))) ||
+                      (d.id && String(d.id).toLowerCase().includes(q))
+                    );
+                  })}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onOpenAdd={handleOpenAddDest}
+                  onOpenEdit={handleOpenEditDest}
+                  onDelete={handleDeleteDestination}
+                />
               )}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onOpenAdd={handleOpenAddDest}
-              onOpenEdit={handleOpenEditDest}
-              onDelete={handleDeleteDestination}
-            />
-          )}
 
-          {/* TAB 2: Điểm Check-in con */}
-          {activeTab === 'checkins' && (
-            <CheckInSpotsTab
-              checkInSpots={checkInSpots.filter(c =>
-                (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (c.locationName && c.locationName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (c.desc && c.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (c.diemNoiBat && c.diemNoiBat.toLowerCase().includes(searchQuery.toLowerCase()))
+              {/* TAB 2: Điểm Check-in con */}
+              {activeTab === 'checkins' && (
+                <CheckInSpotsTab
+                  checkInSpots={checkInSpots.filter(c =>
+                    (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    (c.locationName && c.locationName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    (c.desc && c.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                    (c.diemNoiBat && c.diemNoiBat.toLowerCase().includes(searchQuery.toLowerCase()))
+                  )}
+                  destinations={destinations}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onOpenAdd={handleOpenAddCheckIn}
+                  onOpenEdit={handleOpenEditCheckIn}
+                  onDelete={handleRequestDeleteCheckIn}
+                />
               )}
-              destinations={destinations}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onOpenAdd={handleOpenAddCheckIn}
-              onOpenEdit={handleOpenEditCheckIn}
-              onDelete={handleRequestDeleteCheckIn}
-            />
-          )}
 
-          {/* TAB 3: Khách sạn & Dịch vụ */}
-          {activeTab === 'services' && (
-            <ServicesTab
-              services={services.filter(s =>
-                s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.locationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+              {/* TAB 3: Khách sạn & Dịch vụ */}
+              {activeTab === 'services' && (
+                <ServicesTab
+                  services={services.filter(s =>
+                    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    s.locationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    s.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+                  )}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onOpenAdd={handleOpenAddService}
+                  onOpenEdit={handleOpenEditService}
+                  onDelete={handleDeleteService}
+                />
               )}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onOpenAdd={handleOpenAddService}
-              onOpenEdit={handleOpenEditService}
-              onDelete={handleDeleteService}
-            />
-          )}
 
-          {/* TAB 4: Bình luận & Đánh giá (MỚI) */}
-          {activeTab === 'reviews' && (
-            <ReviewsTab
-              reviews={reviews}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onToggleReviewStatus={handleToggleReviewStatus}
-              onDeleteReview={handleDeleteReview}
-            />
-          )}
-
-          {/* TAB 5: Người dùng & Khóa tài khoản */}
-          {activeTab === 'users' && (
-            <UsersTab
-              users={users.filter(u =>
-                u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                u.email.toLowerCase().includes(searchQuery.toLowerCase())
+              {/* TAB 4: Bình luận & Đánh giá (MỚI) */}
+              {activeTab === 'reviews' && (
+                <ReviewsTab
+                  reviews={reviews}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onToggleReviewStatus={handleToggleReviewStatus}
+                  onDeleteReview={handleDeleteReview}
+                />
               )}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              onToggleUserBan={handleToggleUserBan}
-            />
-          )}
 
-          {/* TAB 6: Thống kê ResNet50 */}
-          {activeTab === 'analytics' && <AnalyticsTab stats={stats} />}
+              {/* TAB 5: Người dùng & Khóa tài khoản */}
+              {activeTab === 'users' && (
+                <UsersTab
+                  users={users.filter(u =>
+                    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+                  )}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  onToggleUserBan={handleToggleUserBan}
+                />
+              )}
+
+              {/* TAB 6: Thống kê ResNet50 */}
+              {activeTab === 'analytics' && <AnalyticsTab stats={stats} />}
+            </>
+          )}
         </main>
       </div>
 
@@ -980,9 +1089,9 @@ const Admin = () => {
 
       {/* POPUP XÁC NHẬN XÓA ĐIỂM CHECK-IN */}
       {spotToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
@@ -1014,6 +1123,331 @@ const Admin = () => {
                 ) : (
                   <span>Xác nhận xóa</span>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. MODAL BẢO VỆ 10 ĐỊA DANH GỐC AI RESNET50 */}
+      {aiProtectedDest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            {/* Header Icon */}
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/70 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <ShieldAlert className="w-7 h-7 text-amber-600" />
+            </div>
+
+            {/* Title & Badge */}
+            <div className="text-center mb-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-200/60 mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>Mô hình AI ResNet50 Bảo Vệ</span>
+              </span>
+              <h3 className="text-xl font-bold text-slate-900">
+                Không thể xóa địa danh gốc
+              </h3>
+            </div>
+
+            {/* Target Destination Card */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 mb-4 flex items-center gap-3.5">
+              {aiProtectedDest.image && (
+                <img
+                  src={aiProtectedDest.image}
+                  alt={aiProtectedDest.name}
+                  className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/vinh_ha_long.jpg';
+                  }}
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-md">
+                    #{aiProtectedDest.id}
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    {aiProtectedDest.province || 'Việt Nam'}
+                  </span>
+                </div>
+                <h4 className="font-bold text-slate-800 text-base mt-0.5 truncate">
+                  {aiProtectedDest.name}
+                </h4>
+              </div>
+            </div>
+
+            {/* Polite message body */}
+            <div className="space-y-2 text-sm text-slate-600 leading-relaxed mb-6 bg-amber-50/50 p-4 rounded-2xl border border-amber-100/80">
+              <p>
+                Địa danh <span className="font-semibold text-slate-900">"{aiProtectedDest.name}"</span> thuộc danh mục <span className="font-semibold text-slate-900">10 điểm đến gốc cốt lõi</span> gắn liền trực tiếp với bộ trọng số mô hình thị giác máy tính AI ResNet50.
+              </p>
+              <p className="text-xs text-slate-500">
+                Để bảo đảm hệ thống nhận diện hình ảnh hoạt động chính xác và nhất quán, hệ thống bảo lưu địa danh này và chỉ cho phép cập nhật thông tin mô tả, tọa độ và hình ảnh, không cho phép xóa khỏi cơ sở dữ liệu.
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setAiProtectedDest(null)}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 font-medium text-sm transition-all text-center"
+              >
+                Đã hiểu
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = aiProtectedDest;
+                  setAiProtectedDest(null);
+                  handleOpenEditDest(target);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm shadow-md shadow-sky-200 transition-all flex items-center justify-center gap-2"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Chỉnh sửa địa danh này</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. MODAL XÁC NHẬN XÓA ĐỊA DANH MỞ RỘNG */}
+      {destToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              Xác nhận xóa địa danh
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              Bạn có chắc chắn muốn xóa địa danh du lịch mở rộng <span className="font-semibold text-slate-800">"{destToDelete.name}"</span> (#{destToDelete.id})? Toàn bộ dữ liệu điểm check-in và khách sạn liên quan cũng sẽ bị ảnh hưởng.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setDestToDelete(null)}
+                disabled={isDeletingDest}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDestination}
+                disabled={isDeletingDest}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              >
+                {isDeletingDest ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xác nhận xóa</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MODAL XÁC NHẬN XÓA KHÁCH SẠN / DỊCH VỤ */}
+      {serviceToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              Xác nhận xóa dịch vụ
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              Bạn có chắc chắn muốn xóa khách sạn / dịch vụ lưu trú <span className="font-semibold text-slate-800">"{serviceToDelete.name}"</span> (#{serviceToDelete.id}) khỏi danh mục hệ thống?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setServiceToDelete(null)}
+                disabled={isDeletingService}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteService}
+                disabled={isDeletingService}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              >
+                {isDeletingService ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xác nhận xóa</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. MODAL XÁC NHẬN XÓA ĐÁNH GIÁ */}
+      {reviewToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              Xác nhận xóa đánh giá
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-4 leading-relaxed">
+              Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá của người dùng <span className="font-semibold text-slate-800">"{reviewToDelete.userName}"</span>?
+            </p>
+            {reviewToDelete.comment && (
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 italic line-clamp-3 mb-6">
+                "{reviewToDelete.comment}"
+              </div>
+            )}
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setReviewToDelete(null)}
+                disabled={isDeletingReview}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteReview}
+                disabled={isDeletingReview}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              >
+                {isDeletingReview ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <span>Xác nhận xóa</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL XÁC NHẬN KHÓA / MỞ KHÓA TÀI KHOẢN */}
+      {userToToggle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+              userToToggle.status === 'Active'
+                ? 'bg-rose-100 text-rose-600'
+                : 'bg-emerald-100 text-emerald-600'
+            }`}>
+              {userToToggle.status === 'Active' ? <Lock className="w-6 h-6" /> : <Unlock className="w-6 h-6" />}
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              {userToToggle.status === 'Active' ? 'Xác nhận khóa tài khoản' : 'Xác nhận mở khóa tài khoản'}
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              {userToToggle.status === 'Active' ? (
+                <>
+                  Bạn có chắc chắn muốn khóa tài khoản thành viên <span className="font-semibold text-slate-800">"{userToToggle.name}"</span> ({userToToggle.email})? Người dùng này sẽ không thể đăng nhập vào hệ thống.
+                </>
+              ) : (
+                <>
+                  Bạn có chắc chắn muốn mở khóa cho tài khoản thành viên <span className="font-semibold text-slate-800">"{userToToggle.name}"</span> ({userToToggle.email})? Người dùng sẽ có thể đăng nhập bình thường.
+                </>
+              )}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setUserToToggle(null)}
+                disabled={isTogglingUser}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmToggleUserBan}
+                disabled={isTogglingUser}
+                className={`px-5 py-2.5 rounded-xl text-white font-medium text-sm shadow-md transition-all flex items-center gap-2 ${
+                  userToToggle.status === 'Active'
+                    ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                }`}
+              >
+                {isTogglingUser ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang cập nhật...</span>
+                  </>
+                ) : (
+                  <span>{userToToggle.status === 'Active' ? 'Xác nhận khóa' : 'Xác nhận mở khóa'}</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. MODAL BẢO VỆ TÀI KHOẢN ADMIN */}
+      {adminProtectedNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              Tài khoản Quản trị viên được bảo vệ
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              Không thể thực hiện thao tác khóa tài khoản đối với Quản trị viên khác (Admin) để đảm bảo quyền quản trị hệ thống không bị gián đoạn.
+            </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setAdminProtectedNotice(false)}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-medium text-sm transition-all"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. MODAL THÔNG BÁO HỆ THỐNG / CẢNH BÁO */}
+      {generalNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
+              {generalNotice.title || 'Thông báo hệ thống'}
+            </h3>
+            <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
+              {generalNotice.message}
+            </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setGeneralNotice(null)}
+                className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm transition-all"
+              >
+                Đóng
               </button>
             </div>
           </div>

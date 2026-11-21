@@ -246,6 +246,16 @@ const getSuggestedAttractions = async (maDiaDiem, currentUserId = null, limit = 
   return getAllAttractions({ maDiaDiem }, currentUserId).then((list) => list.slice(0, limit));
 };
 
+const addReview = async (maNguoiDung, maDiemTQ, danhGia, binhLuan) => {
+  const insertSql = `
+    INSERT INTO DanhGiaDiemTQ (manguoidung, madiemtq, danhgia, binhluan, trangthai)
+    VALUES ($1, $2, $3, $4, 'Approved')
+    RETURNING *
+  `;
+  const res = await query(insertSql, [maNguoiDung, maDiemTQ, danhGia, binhLuan]);
+  return res.rows[0];
+};
+
 const upsertReview = async (maNguoiDung, maDiemTQ, danhGia, binhLuan) => {
   const checkSql = 'SELECT madanhgiadtq FROM DanhGiaDiemTQ WHERE manguoidung = $1 AND madiemtq = $2';
   const checkRes = await query(checkSql, [maNguoiDung, maDiemTQ]);
@@ -268,6 +278,44 @@ const upsertReview = async (maNguoiDung, maDiemTQ, danhGia, binhLuan) => {
   `;
   const res = await query(insertSql, [maNguoiDung, maDiemTQ, danhGia, binhLuan]);
   return res.rows[0];
+};
+
+const updateUserReview = async (maNguoiDung, maDiemTQ, danhGia, binhLuan, maDanhGia = null) => {
+  let updateSql;
+  let params;
+  if (maDanhGia) {
+    updateSql = `
+      UPDATE DanhGiaDiemTQ
+      SET danhgia = $1, binhluan = $2, trangthai = 'Approved', created_at = CURRENT_TIMESTAMP
+      WHERE manguoidung = $3 AND madanhgiadtq = $4
+      RETURNING *
+    `;
+    params = [danhGia, binhLuan, maNguoiDung, maDanhGia];
+  } else {
+    updateSql = `
+      UPDATE DanhGiaDiemTQ
+      SET danhgia = $1, binhluan = $2, trangthai = 'Approved', created_at = CURRENT_TIMESTAMP
+      WHERE manguoidung = $3 AND madiemtq = $4
+      RETURNING *
+    `;
+    params = [danhGia, binhLuan, maNguoiDung, maDiemTQ];
+  }
+  const res = await query(updateSql, params);
+  return res.rows[0] || null;
+};
+
+const deleteUserReview = async (maNguoiDung, maDiemTQ, maDanhGia = null) => {
+  let deleteSql;
+  let params;
+  if (maDanhGia) {
+    deleteSql = 'DELETE FROM DanhGiaDiemTQ WHERE manguoidung = $1 AND madanhgiadtq = $2 RETURNING *';
+    params = [maNguoiDung, maDanhGia];
+  } else {
+    deleteSql = 'DELETE FROM DanhGiaDiemTQ WHERE manguoidung = $1 AND madiemtq = $2 RETURNING *';
+    params = [maNguoiDung, maDiemTQ];
+  }
+  const res = await query(deleteSql, params);
+  return res.rows[0] || null;
 };
 
 const createAttraction = async (data, loaiHinhList = [], hoatDongList = [], mediaList = []) => {
@@ -499,7 +547,10 @@ module.exports = {
   getAllAttractions,
   getById,
   getSuggestedAttractions,
+  addReview,
   upsertReview,
+  updateUserReview,
+  deleteUserReview,
   createAttraction,
   updateAttraction,
   deleteAttraction,

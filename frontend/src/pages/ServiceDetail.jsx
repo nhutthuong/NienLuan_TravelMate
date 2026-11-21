@@ -17,7 +17,7 @@ const ServiceDetail = () => {
   const { type, id } = useParams();
   const locationState = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const isHotel = type === 'hotel';
   const isAttraction = type === 'attraction' || type === 'spot';
@@ -162,6 +162,75 @@ const ServiceDetail = () => {
     }
   };
 
+  const handleReviewUpdate = async (danhGia, binhLuan, reviewId = null) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: locationState.pathname } });
+      return false;
+    }
+
+    if (!binhLuan || !binhLuan.trim()) {
+      setReviewErrorMsg('Vui lòng nhập nội dung nhận xét của bạn.');
+      return false;
+    }
+
+    try {
+      setSubmittingReview(true);
+      setReviewErrorMsg('');
+      setReviewSuccessMsg('');
+
+      if (isHotel) {
+        await api.hotels.updateReview(data.maKhachSan, reviewId, {
+          danhGia,
+          binhLuan: binhLuan.trim(),
+        });
+      } else {
+        await api.attractions.updateReview(data.maDiemTQ, reviewId, {
+          danhGia,
+          binhLuan: binhLuan.trim(),
+        });
+      }
+
+      setReviewSuccessMsg('Cập nhật đánh giá thành công.');
+      await fetchServiceDetail();
+      return true;
+    } catch (err) {
+      setReviewErrorMsg(err.message || 'Không thể cập nhật đánh giá. Vui lòng thử lại sau.');
+      return false;
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleReviewDelete = async (reviewId = null) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: locationState.pathname } });
+      return false;
+    }
+
+    try {
+      setSubmittingReview(true);
+      setReviewErrorMsg('');
+      setReviewSuccessMsg('');
+
+      if (isHotel) {
+        await api.hotels.deleteReview(data.maKhachSan, reviewId);
+      } else {
+        await api.attractions.deleteReview(data.maDiemTQ, reviewId);
+      }
+
+      setReviewSuccessMsg('Đã xóa đánh giá thành công.');
+      setReviewComment('');
+      setReviewRating(5);
+      await fetchServiceDetail();
+      return true;
+    } catch (err) {
+      setReviewErrorMsg(err.message || 'Không thể xóa đánh giá. Vui lòng thử lại sau.');
+      return false;
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const formatCurrency = (val) => {
     if (!val || isNaN(val)) return 'Liên hệ';
     return new Intl.NumberFormat('vi-VN').format(val) + '₫';
@@ -296,6 +365,7 @@ const ServiceDetail = () => {
                 reviewsList={reviewsList}
                 averageRating={averageRating}
                 isAuthenticated={isAuthenticated}
+                currentUser={user}
                 reviewRating={reviewRating}
                 setReviewRating={setReviewRating}
                 hoverRating={hoverRating}
@@ -306,6 +376,8 @@ const ServiceDetail = () => {
                 reviewSuccessMsg={reviewSuccessMsg}
                 reviewErrorMsg={reviewErrorMsg}
                 onReviewSubmit={handleReviewSubmit}
+                onReviewUpdate={handleReviewUpdate}
+                onReviewDelete={handleReviewDelete}
                 onNavigateLogin={() =>
                   navigate('/login', { state: { from: locationState.pathname } })
                 }

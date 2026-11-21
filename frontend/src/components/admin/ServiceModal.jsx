@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Save, Check } from 'lucide-react';
-import { PREFERENCE_TAGS } from './adminMockData';
+
+const PREFERENCE_TAGS = ['Thiên nhiên', 'Khám phá', 'Nghỉ dưỡng', 'Văn hóa'];
 
 const ServiceModal = ({
   isOpen,

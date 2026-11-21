@@ -64,6 +64,8 @@ const CheckInSpotModal = ({
   const [manualUrlInput, setManualUrlInput] = useState('');
   const [newActivityInput, setNewActivityInput] = useState('');
   const [newActivityNoteInput, setNewActivityNoteInput] = useState('');
+  const [uploadError, setUploadError] = useState(null);
+  const [activityError, setActivityError] = useState(null);
 
   if (!isOpen) return null;
 
@@ -78,16 +80,18 @@ const CheckInSpotModal = ({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    setUploadError(null);
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
     const newItems = [];
+    const errors = [];
 
     for (const file of files) {
       if (!validTypes.includes(file.type)) {
-        alert(`Tệp "${file.name}" không hợp lệ. Vui lòng chọn ảnh JPG, PNG hoặc WEBP.`);
+        errors.push(`Tệp "${file.name}" không hợp lệ (chỉ hỗ trợ JPG, PNG, WEBP).`);
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert(`Tệp "${file.name}" vượt quá 10MB.`);
+        errors.push(`Tệp "${file.name}" vượt quá 10MB.`);
         continue;
       }
       newItems.push({
@@ -96,6 +100,10 @@ const CheckInSpotModal = ({
         url: '',
         type: 'image',
       });
+    }
+
+    if (errors.length > 0) {
+      setUploadError(errors.join(' '));
     }
 
     if (newItems.length > 0) {
@@ -187,6 +195,7 @@ const CheckInSpotModal = ({
   };
 
   const handleAddCustomActivity = () => {
+    setActivityError(null);
     const trimmedName = newActivityInput.trim();
     if (!trimmedName) return;
 
@@ -196,7 +205,7 @@ const CheckInSpotModal = ({
     );
 
     if (exists) {
-      alert('Hoạt động trải nghiệm này đã có trong danh sách.');
+      setActivityError('Hoạt động trải nghiệm này đã có trong danh sách.');
       return;
     }
 
@@ -481,6 +490,13 @@ const CheckInSpotModal = ({
               </button>
             </div>
 
+            {uploadError && (
+              <div className="p-3 mb-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-600 flex items-center gap-2">
+                <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
             {/* Form nhập URL thủ công */}
             {showManualUrl && (
               <div className="p-3 mb-3 bg-slate-50 rounded-xl border border-slate-200 flex gap-2">
@@ -697,6 +713,13 @@ const CheckInSpotModal = ({
                   </button>
                 </div>
               </div>
+
+              {activityError && (
+                <div className="mt-2 text-xs text-rose-600 font-semibold flex items-center gap-1.5">
+                  <AlertCircle size={13} className="shrink-0" />
+                  <span>{activityError}</span>
+                </div>
+              )}
             </div>
 
             {/* Danh sách các hoạt động đã gán cho điểm check-in */}

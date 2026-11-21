@@ -53,6 +53,7 @@ const DestinationModal = ({
 
   const fileInputRef = useRef(null);
   const [showManualUrl, setShowManualUrl] = useState(false);
+  const [imageError, setImageError] = useState(null);
 
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -60,15 +61,16 @@ const DestinationModal = ({
 
     const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      alert('Định dạng tệp không hợp lệ. Vui lòng chọn ảnh định dạng JPG, PNG hoặc WEBP.');
+      setImageError('Định dạng tệp không hợp lệ. Vui lòng chọn ảnh định dạng JPG, PNG hoặc WEBP.');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Dung lượng tệp vượt quá 10MB. Vui lòng chọn ảnh nhỏ hơn.');
+      setImageError('Dung lượng tệp vượt quá 10MB. Vui lòng chọn ảnh nhỏ hơn.');
       return;
     }
 
+    setImageError(null);
     const previewUrl = URL.createObjectURL(file);
     setDestForm({
       ...destForm,
@@ -78,6 +80,7 @@ const DestinationModal = ({
   };
 
   const handleResetImage = () => {
+    setImageError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -342,6 +345,12 @@ const DestinationModal = ({
                     <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                       Nhấn nút bên dưới để chọn ảnh từ máy tính (JPG, PNG, WEBP, tối đa 10MB). Khi cập nhật ảnh mới, file ảnh cũ không còn liên kết với địa danh nào sẽ tự động xóa khỏi thư mục để tiết kiệm dung lượng.
                     </p>
+                    {imageError && (
+                      <p className="text-xs text-rose-600 font-semibold mt-1.5 flex items-center gap-1">
+                        <AlertCircle size={14} className="shrink-0" />
+                        <span>{imageError}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-1">
