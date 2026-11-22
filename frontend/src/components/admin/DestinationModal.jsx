@@ -54,6 +54,39 @@ const DestinationModal = ({
   const fileInputRef = useRef(null);
   const [showManualUrl, setShowManualUrl] = useState(false);
   const [imageError, setImageError] = useState(null);
+  const [formError, setFormError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [provinceError, setProvinceError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormError('');
+      setNameError('');
+      setProvinceError('');
+      setImageError(null);
+    }
+  }, [isOpen, editingDestination]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    let hasError = false;
+    if (!destForm.name || !destForm.name.trim()) {
+      setNameError('Vui lòng điền vào trường này');
+      hasError = true;
+    }
+    if (!destForm.province || !destForm.province.trim()) {
+      setProvinceError('Vui lòng điền vào trường này');
+      hasError = true;
+    }
+    if (hasError) {
+      setFormError('Vui lòng điền đầy đủ Tên địa danh và Tỉnh/Thành phố.');
+      return;
+    }
+    setNameError('');
+    setProvinceError('');
+    setFormError('');
+    onSave(e);
+  };
 
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -138,7 +171,25 @@ const DestinationModal = ({
         </div>
 
         {/* Form Body - Scrollable */}
-        <form onSubmit={onSave} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <form noValidate onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* Validation Alert Banner (Tailwind Alert) */}
+          {formError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-xs text-rose-800 animate-fadeIn">
+              <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-rose-900">Thông tin chưa đầy đủ</p>
+                <p className="mt-0.5 text-rose-700">{formError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormError('')}
+                className="text-rose-400 hover:text-rose-700 p-0.5"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* AI Banner Specification Info */}
           {editingDestination ? (
             isAiLocation ? (
@@ -183,28 +234,58 @@ const DestinationModal = ({
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Tên địa danh <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                required
-                placeholder="VD: Cần Thơ, Đà Lạt, Vịnh Hạ Long..."
-                value={destForm.name || ''}
-                onChange={(e) => setDestForm({ ...destForm, name: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="VD: Cần Thơ, Đà Lạt, Vịnh Hạ Long..."
+                  value={destForm.name || ''}
+                  onChange={(e) => {
+                    setDestForm({ ...destForm, name: e.target.value });
+                    if (nameError) setNameError('');
+                    if (formError) setFormError('');
+                  }}
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-all placeholder:text-slate-400 ${
+                    nameError
+                      ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-500'
+                      : 'border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500'
+                  }`}
+                />
+                {nameError && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-600 animate-fadeIn">
+                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                    <span>{nameError}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Tỉnh / Thành phố <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                required
-                placeholder="VD: Cần Thơ, Lâm Đồng, Quảng Ninh..."
-                value={destForm.province || ''}
-                onChange={(e) => setDestForm({ ...destForm, province: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="VD: Cần Thơ, Lâm Đồng, Quảng Ninh..."
+                  value={destForm.province || ''}
+                  onChange={(e) => {
+                    setDestForm({ ...destForm, province: e.target.value });
+                    if (provinceError) setProvinceError('');
+                    if (formError) setFormError('');
+                  }}
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-all placeholder:text-slate-400 ${
+                    provinceError
+                      ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-500'
+                      : 'border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500'
+                  }`}
+                />
+                {provinceError && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-600 animate-fadeIn">
+                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                    <span>{provinceError}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

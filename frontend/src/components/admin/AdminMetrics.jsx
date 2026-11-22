@@ -35,24 +35,24 @@ const AdminMetrics = ({
         </span>
       </div>
 
-      {/* Metric 2: Khách sạn nghỉ dưỡng */}
+      {/* Metric 2: Khách sạn */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách sạn nghỉ dưỡng</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách sạn</span>
           <div className="p-2.5 rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-100">
             <Hotel size={20} />
           </div>
         </div>
-        <h3 className="text-2xl font-bold font-heading text-slate-800 mt-2">{servicesCount} Dịch vụ</h3>
+        <h3 className="text-2xl font-bold font-heading text-slate-800 mt-2">{servicesCount} Khách sạn</h3>
         <span className="text-xs text-sky-600 font-medium inline-flex items-center gap-1 mt-1">
           Tiện ích hồ bơi &amp; thư giãn
         </span>
       </div>
 
-      {/* Metric 3: Đánh giá & Bình luận (MỚI) */}
+      {/* Metric 3: Đánh giá, bình luận */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow transition-shadow">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đánh giá &amp; Bình luận</span>
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đánh giá, bình luận</span>
           <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
             <MessageSquare size={20} />
           </div>

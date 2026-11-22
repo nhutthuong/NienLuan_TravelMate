@@ -127,7 +127,7 @@ const AdminSidebar = ({
             )}
           </button>
 
-          {/* Tab 3: Khách sạn & Dịch vụ */}
+          {/* Tab 3: Khách sạn */}
           <button
             onClick={() => handleTabChange('services')}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all ${
@@ -135,12 +135,12 @@ const AdminSidebar = ({
                 ? 'bg-white text-sky-800 shadow-md font-bold'
                 : 'text-sky-100 hover:text-white hover:bg-white/10'
             }`}
-            title="Khách sạn & Dịch vụ"
+            title="Khách sạn"
           >
             <Hotel size={20} className={activeTab === 'services' ? 'text-sky-700' : 'text-sky-200'} />
             {!isSidebarCollapsed && (
               <div className="flex-1 text-left flex items-center justify-between">
-                <span>Khách Sạn &amp; Dịch Vụ</span>
+                <span>Khách sạn</span>
                 <span className={`px-2 py-0.5 text-xs rounded-full font-mono ${
                   activeTab === 'services' ? 'bg-sky-100 text-sky-800' : 'bg-white/15 text-white'
                 }`}>
@@ -150,7 +150,7 @@ const AdminSidebar = ({
             )}
           </button>
 
-          {/* Tab 4: Bình luận & Đánh giá (MỚI) */}
+          {/* Tab 4: Đánh giá, bình luận */}
           <button
             onClick={() => handleTabChange('reviews')}
             className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all ${
@@ -158,12 +158,12 @@ const AdminSidebar = ({
                 ? 'bg-white text-sky-800 shadow-md font-bold'
                 : 'text-sky-100 hover:text-white hover:bg-white/10'
             }`}
-            title="Bình luận & Đánh giá"
+            title="Đánh giá, bình luận"
           >
             <MessageSquare size={20} className={activeTab === 'reviews' ? 'text-sky-700' : 'text-sky-200'} />
             {!isSidebarCollapsed && (
               <div className="flex-1 text-left flex items-center justify-between">
-                <span>Đánh Giá &amp; Bình Luận</span>
+                <span>Đánh giá, bình luận</span>
                 <div className="flex items-center gap-1.5">
                   {flaggedReviewsCount > 0 && (
                     <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-500 text-white font-bold animate-pulse" title="Cần kiểm duyệt">

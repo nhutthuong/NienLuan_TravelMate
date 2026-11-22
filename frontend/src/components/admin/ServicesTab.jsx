@@ -39,7 +39,7 @@ const ServicesTab = ({
           <thead className="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
             <tr>
               <th className="py-3.5 px-5">ID</th>
-              <th className="py-3.5 px-5">Tên Dịch Vụ / Khách sạn</th>
+              <th className="py-3.5 px-5">Tên Khách sạn</th>
               <th className="py-3.5 px-5">Thuộc Địa Danh</th>
               <th className="py-3.5 px-5">Thẻ Sở Thích</th>
               <th className="py-3.5 px-5">Tiện ích thư giãn</th>
@@ -52,7 +52,7 @@ const ServicesTab = ({
             {services.length === 0 ? (
               <tr>
                 <td colSpan="8" className="py-10 text-center text-slate-400 text-sm">
-                  Không tìm thấy khách sạn hoặc dịch vụ nào.
+                  Không tìm thấy khách sạn nào phù hợp.
                 </td>
               </tr>
             ) : (

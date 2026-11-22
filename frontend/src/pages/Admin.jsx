@@ -1255,7 +1255,7 @@ const Admin = () => {
         </div>
       )}
 
-      {/* 3. MODAL XÁC NHẬN XÓA KHÁCH SẠN / DỊCH VỤ */}
+      {/* 3. MODAL XÁC NHẬN XÓA KHÁCH SẠN */}
       {serviceToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
@@ -1263,10 +1263,10 @@ const Admin = () => {
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
-              Xác nhận xóa dịch vụ
+              Xác nhận xóa khách sạn
             </h3>
             <p className="text-sm text-slate-500 text-center mb-6 leading-relaxed">
-              Bạn có chắc chắn muốn xóa khách sạn / dịch vụ lưu trú <span className="font-semibold text-slate-800">"{serviceToDelete.name}"</span> (#{serviceToDelete.id}) khỏi danh mục hệ thống?
+              Bạn có chắc chắn muốn xóa khách sạn <span className="font-semibold text-slate-800">"{serviceToDelete.name}"</span> (#{serviceToDelete.id}) khỏi danh mục hệ thống?
             </p>
             <div className="flex gap-3 justify-end">
               <button
@@ -1297,7 +1297,7 @@ const Admin = () => {
         </div>
       )}
 
-      {/* 4. MODAL XÁC NHẬN XÓA ĐÁNH GIÁ */}
+      {/* 4. MODAL XÁC NHẬN XÓA ĐÁNH GIÁ, BÌNH LUẬN */}
       {reviewToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
@@ -1305,10 +1305,10 @@ const Admin = () => {
               <Trash2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 text-center mb-2">
-              Xác nhận xóa đánh giá
+              Xác nhận xóa đánh giá, bình luận
             </h3>
             <p className="text-sm text-slate-500 text-center mb-4 leading-relaxed">
-              Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá của người dùng <span className="font-semibold text-slate-800">"{reviewToDelete.userName}"</span>?
+              Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá, bình luận của người dùng <span className="font-semibold text-slate-800">"{reviewToDelete.userName}"</span>?
             </p>
             {reviewToDelete.comment && (
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 italic line-clamp-3 mb-6">

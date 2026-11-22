@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -18,6 +18,7 @@ import {
   Star,
   Trash2,
   Link as LinkIcon,
+  AlertCircle,
 } from 'lucide-react';
 
 const DEFAULT_CATEGORIES = [
@@ -66,6 +67,17 @@ const CheckInSpotModal = ({
   const [newActivityNoteInput, setNewActivityNoteInput] = useState('');
   const [uploadError, setUploadError] = useState(null);
   const [activityError, setActivityError] = useState(null);
+  const [nameError, setNameError] = useState('');
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setNameError('');
+      setFormError('');
+      setUploadError(null);
+      setActivityError(null);
+    }
+  }, [isOpen, editingCheckIn]);
 
   if (!isOpen) return null;
 
@@ -248,6 +260,23 @@ const CheckInSpotModal = ({
     (d) => String(d.id) === String(checkInForm.locationId)
   );
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const trimmedName = (checkInForm.name || '').trim();
+    if (!trimmedName) {
+      setNameError('Vui lòng điền vào trường này');
+      setFormError('Vui lòng nhập tên điểm check-in (điểm tham quan).');
+      return;
+    }
+    if (!checkInForm.locationId) {
+      setFormError('Vui lòng chọn địa danh trực thuộc.');
+      return;
+    }
+    setNameError('');
+    setFormError('');
+    onSave(e);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fadeIn overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 text-slate-800 my-8 overflow-hidden flex flex-col max-h-[92vh]">
@@ -281,7 +310,25 @@ const CheckInSpotModal = ({
         </div>
 
         {/* Modal Form Body */}
-        <form onSubmit={onSave} className="p-6 space-y-5 overflow-y-auto flex-1">
+        <form noValidate onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+          {/* Validation Alert Banner (Tailwind Alert) */}
+          {formError && (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3 text-xs text-rose-800 animate-fadeIn">
+              <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-rose-900">Thông tin chưa đầy đủ</p>
+                <p className="mt-0.5 text-rose-700">{formError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormError('')}
+                className="text-rose-400 hover:text-rose-700 p-0.5"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
+
           {/* Context Banner */}
           <div className="p-3.5 bg-sky-50/80 border border-sky-200/70 rounded-2xl flex items-start gap-3">
             <Info size={18} className="text-sky-600 shrink-0 mt-0.5" />
@@ -304,14 +351,29 @@ const CheckInSpotModal = ({
                 <span>Tên điểm check-in</span>
                 <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                required
-                value={checkInForm.name || ''}
-                onChange={(e) => setCheckInForm({ ...checkInForm, name: e.target.value })}
-                placeholder="VD: Chợ nổi Cái Răng, Đảo Ti Tốp, Hang Múa..."
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={checkInForm.name || ''}
+                  onChange={(e) => {
+                    setCheckInForm({ ...checkInForm, name: e.target.value });
+                    if (nameError) setNameError('');
+                    if (formError) setFormError('');
+                  }}
+                  placeholder="VD: Chợ nổi Cái Răng, Đảo Ti Tốp, Hang Múa..."
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-all placeholder:text-slate-400 ${
+                    nameError
+                      ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-500'
+                      : 'border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500'
+                  }`}
+                />
+                {nameError && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-600 animate-fadeIn">
+                    <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                    <span>{nameError}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -320,9 +382,11 @@ const CheckInSpotModal = ({
                 <span className="text-rose-500">*</span>
               </label>
               <select
-                required
                 value={checkInForm.locationId || ''}
-                onChange={(e) => setCheckInForm({ ...checkInForm, locationId: e.target.value })}
+                onChange={(e) => {
+                  setCheckInForm({ ...checkInForm, locationId: e.target.value });
+                  if (formError) setFormError('');
+                }}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all cursor-pointer"
               >
                 {destinations.map((d) => (

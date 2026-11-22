@@ -10,7 +10,7 @@ const AdminHeader = ({ activeTab }) => {
       case 'checkins':
         return 'Quản Lý Điểm Check-in & Tham Quan';
       case 'services':
-        return 'Quản Lý Khách Sạn & Dịch Vụ Nghỉ Dưỡng';
+        return 'Quản Lý Khách Sạn';
       case 'reviews':
         return 'Kiểm Duyệt & Quản Lý Đánh Giá, Bình Luận';
       case 'users':
