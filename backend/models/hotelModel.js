@@ -92,6 +92,7 @@ const getAllHotels = async (
         ORDER BY thutu ASC LIMIT 1
       ) AS anh_dai_dien,
       COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
+      COALESCE(ARRAY_AGG(DISTINCT kl.maloaihinh) FILTER (WHERE kl.maloaihinh IS NOT NULL), ARRAY[]::VARCHAR[]) AS ma_loai_hinh,
       COALESCE(
         (
           SELECT ARRAY_AGG(tn.ten ORDER BY kt.thutu ASC)
@@ -137,6 +138,7 @@ const getAllHotels = async (
     tinhThanh: row.tinhthanh,
     anhDaiDien: row.anh_dai_dien || '/images/vinh_ha_long.jpg',
     loaiHinh: row.loai_hinh,
+    maLoaiHinh: row.ma_loai_hinh || [],
     tienNghi: row.tien_nghi,
     diemDanhGia: parseFloat(row.diem_danh_gia),
     soDanhGia: row.so_danh_gia,
@@ -173,6 +175,7 @@ const getById = async (maKhachSan, currentUserId = null) => {
       d.ten AS ten_dia_diem,
       d.tinhthanh,
       COALESCE(ARRAY_AGG(DISTINCT lh.ten) FILTER (WHERE lh.ten IS NOT NULL), ARRAY[]::VARCHAR[]) AS loai_hinh,
+      COALESCE(ARRAY_AGG(DISTINCT kl.maloaihinh) FILTER (WHERE kl.maloaihinh IS NOT NULL), ARRAY[]::VARCHAR[]) AS ma_loai_hinh,
       COALESCE(
         (SELECT ROUND(AVG(danhgia), 1) FROM DanhGiaKhachSan WHERE makhachsan = ks.makhachsan AND trangthai = 'Approved'),
         ks.sosao
@@ -234,6 +237,7 @@ const getById = async (maKhachSan, currentUserId = null) => {
     tenDiaDiem: row.ten_dia_diem,
     tinhThanh: row.tinhthanh,
     loaiHinh: row.loai_hinh,
+    maLoaiHinh: row.ma_loai_hinh || [],
     diemDanhGia: parseFloat(row.diem_danh_gia),
     soDanhGia: row.so_danh_gia,
     isFavorited: row.is_favorited,
@@ -360,36 +364,76 @@ const createHotel = async (data, loaiHinhList = [], tienNghiList = [], mediaList
       data.giaThamKhao || 0,
       data.diemNoiBat || null,
       data.donViTinh || '/đêm',
-      data.bookingUrl,
+      data.bookingUrl || data.booking_url,
     ]);
 
     const newKs = res.rows[0];
 
     if (Array.isArray(loaiHinhList)) {
       for (const lh of loaiHinhList) {
-        await client.query(
-          'INSERT INTO KhachSan_LoaiHinh (makhachsan, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [newKs.makhachsan, lh]
-        );
+        const maLh = typeof lh === 'object' && lh !== null ? (lh.maLoaiHinh || lh.maloaihinh || lh.id) : lh;
+        if (maLh) {
+          const foundLh = await client.query(
+            'SELECT maloaihinh FROM LoaiHinhDuLich WHERE maloaihinh = $1 OR LOWER(ten) = LOWER($1) LIMIT 1',
+            [String(maLh).trim()]
+          );
+          if (foundLh.rows.length > 0) {
+            await client.query(
+              'INSERT INTO KhachSan_LoaiHinh (makhachsan, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [newKs.makhachsan, foundLh.rows[0].maloaihinh]
+            );
+          }
+        }
       }
     }
 
     if (Array.isArray(tienNghiList)) {
-      for (const tn of tienNghiList) {
-        await client.query(
-          'INSERT INTO KhachSan_TienNghi (makhachsan, matiennghi, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-          [newKs.makhachsan, tn.maTienNghi, tn.thuTu || 1, tn.ghiChu || null]
-        );
+      for (let i = 0; i < tienNghiList.length; i++) {
+        const tn = tienNghiList[i];
+        const amenityText = (typeof tn === 'string' ? tn : (tn?.ten || tn?.maTienNghi || tn?.matiennghi || tn?.id || '')).trim();
+        const ghiChu = typeof tn === 'object' ? (tn?.ghiChu || tn?.ghichu || null) : null;
+        const thuTu = typeof tn === 'object' ? (tn?.thuTu || tn?.thutu || i + 1) : i + 1;
+        const icon = typeof tn === 'object' ? (tn?.icon || 'sparkles') : 'sparkles';
+
+        if (!amenityText) continue;
+
+        let amenityId = null;
+        if (/^TN\d+$/i.test(amenityText)) {
+          amenityId = amenityText.toUpperCase();
+        } else {
+          const findRes = await client.query('SELECT matiennghi FROM TienNghi WHERE LOWER(ten) = LOWER($1)', [amenityText]);
+          if (findRes.rows.length > 0) {
+            amenityId = findRes.rows[0].matiennghi;
+          } else {
+            const insertTnRes = await client.query(
+              'INSERT INTO TienNghi (ten, icon) VALUES ($1, $2) RETURNING matiennghi',
+              [amenityText, icon || 'sparkles']
+            );
+            amenityId = insertTnRes.rows[0].matiennghi;
+          }
+        }
+
+        if (amenityId) {
+          await client.query(
+            'INSERT INTO KhachSan_TienNghi (makhachsan, matiennghi, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT (makhachsan, matiennghi) DO NOTHING',
+            [newKs.makhachsan, amenityId, thuTu, ghiChu]
+          );
+        }
       }
     }
 
     if (Array.isArray(mediaList)) {
       for (let i = 0; i < mediaList.length; i++) {
         const m = mediaList[i];
-        await client.query(
-          'INSERT INTO MediaKhachSan (makhachsan, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
-          [newKs.makhachsan, m.thuTu || i + 1, m.url || m, m.type || 'image']
-        );
+        const mediaUrl = typeof m === 'object' && m !== null ? (m.url || m.mediaUrl || '') : m;
+        const mediaType = typeof m === 'object' && m !== null ? (m.type || m.mediaType || 'image') : 'image';
+        const thuTu = typeof m === 'object' && m !== null ? (m.thuTu || i + 1) : i + 1;
+        if (mediaUrl) {
+          await client.query(
+            'INSERT INTO MediaKhachSan (makhachsan, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
+            [newKs.makhachsan, thuTu, mediaUrl, mediaType]
+          );
+        }
       }
     }
 
@@ -424,6 +468,7 @@ const updateHotel = async (maKhachSan, data, loaiHinhList = null, tienNghiList =
       WHERE makhachsan = $12
       RETURNING *
     `;
+    const bookingUrlVal = data.bookingUrl !== undefined ? data.bookingUrl : (data.booking_url !== undefined ? data.booking_url : null);
     const res = await client.query(updateSql, [
       data.maDiaDiem,
       data.ten,
@@ -435,7 +480,7 @@ const updateHotel = async (maKhachSan, data, loaiHinhList = null, tienNghiList =
       data.giaThamKhao,
       data.diemNoiBat,
       data.donViTinh,
-      data.bookingUrl,
+      bookingUrlVal,
       maKhachSan,
     ]);
 
@@ -447,20 +492,55 @@ const updateHotel = async (maKhachSan, data, loaiHinhList = null, tienNghiList =
     if (Array.isArray(loaiHinhList)) {
       await client.query('DELETE FROM KhachSan_LoaiHinh WHERE makhachsan = $1', [maKhachSan]);
       for (const lh of loaiHinhList) {
-        await client.query(
-          'INSERT INTO KhachSan_LoaiHinh (makhachsan, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [maKhachSan, lh]
-        );
+        const maLh = typeof lh === 'object' && lh !== null ? (lh.maLoaiHinh || lh.maloaihinh || lh.id) : lh;
+        if (maLh) {
+          const foundLh = await client.query(
+            'SELECT maloaihinh FROM LoaiHinhDuLich WHERE maloaihinh = $1 OR LOWER(ten) = LOWER($1) LIMIT 1',
+            [String(maLh).trim()]
+          );
+          if (foundLh.rows.length > 0) {
+            await client.query(
+              'INSERT INTO KhachSan_LoaiHinh (makhachsan, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [maKhachSan, foundLh.rows[0].maloaihinh]
+            );
+          }
+        }
       }
     }
 
     if (Array.isArray(tienNghiList)) {
       await client.query('DELETE FROM KhachSan_TienNghi WHERE makhachsan = $1', [maKhachSan]);
-      for (const tn of tienNghiList) {
-        await client.query(
-          'INSERT INTO KhachSan_TienNghi (makhachsan, matiennghi, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-          [maKhachSan, tn.maTienNghi, tn.thuTu || 1, tn.ghiChu || null]
-        );
+      for (let i = 0; i < tienNghiList.length; i++) {
+        const tn = tienNghiList[i];
+        const amenityText = (typeof tn === 'string' ? tn : (tn?.ten || tn?.maTienNghi || tn?.matiennghi || tn?.id || '')).trim();
+        const ghiChu = typeof tn === 'object' ? (tn?.ghiChu || tn?.ghichu || null) : null;
+        const thuTu = typeof tn === 'object' ? (tn?.thuTu || tn?.thutu || i + 1) : i + 1;
+        const icon = typeof tn === 'object' ? (tn?.icon || 'sparkles') : 'sparkles';
+
+        if (!amenityText) continue;
+
+        let amenityId = null;
+        if (/^TN\d+$/i.test(amenityText)) {
+          amenityId = amenityText.toUpperCase();
+        } else {
+          const findRes = await client.query('SELECT matiennghi FROM TienNghi WHERE LOWER(ten) = LOWER($1)', [amenityText]);
+          if (findRes.rows.length > 0) {
+            amenityId = findRes.rows[0].matiennghi;
+          } else {
+            const insertTnRes = await client.query(
+              'INSERT INTO TienNghi (ten, icon) VALUES ($1, $2) RETURNING matiennghi',
+              [amenityText, icon || 'sparkles']
+            );
+            amenityId = insertTnRes.rows[0].matiennghi;
+          }
+        }
+
+        if (amenityId) {
+          await client.query(
+            'INSERT INTO KhachSan_TienNghi (makhachsan, matiennghi, thutu, ghichu) VALUES ($1, $2, $3, $4) ON CONFLICT (makhachsan, matiennghi) DO NOTHING',
+            [maKhachSan, amenityId, thuTu, ghiChu]
+          );
+        }
       }
     }
 
@@ -468,10 +548,15 @@ const updateHotel = async (maKhachSan, data, loaiHinhList = null, tienNghiList =
       await client.query('DELETE FROM MediaKhachSan WHERE makhachsan = $1', [maKhachSan]);
       for (let i = 0; i < mediaList.length; i++) {
         const m = mediaList[i];
-        await client.query(
-          'INSERT INTO MediaKhachSan (makhachsan, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
-          [maKhachSan, m.thuTu || i + 1, m.url || m, m.type || 'image']
-        );
+        const mediaUrl = typeof m === 'object' && m !== null ? (m.url || m.mediaUrl || m.media_url) : m;
+        const mediaType = typeof m === 'object' && m !== null ? (m.type || m.mediaType || 'image') : 'image';
+        const thuTu = typeof m === 'object' && m !== null ? (m.thuTu || i + 1) : i + 1;
+        if (mediaUrl) {
+          await client.query(
+            'INSERT INTO MediaKhachSan (makhachsan, thutu, media_url, media_type) VALUES ($1, $2, $3, $4)',
+            [maKhachSan, thuTu, mediaUrl, mediaType]
+          );
+        }
       }
     }
 

@@ -102,15 +102,24 @@ const Admin = () => {
   // Modals & Form States: Khách sạn / Dịch vụ
   const [editingService, setEditingService] = useState(null);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [isSavingService, setIsSavingService] = useState(false);
+  const [allAmenities, setAllAmenities] = useState([]);
   const [serviceForm, setServiceForm] = useState({
     name: '',
-    locationId: 1,
-    tags: ['Nghỉ dưỡng'],
-    price: '',
-    rating: 4.8,
-    image: '',
-    coreAmenities: '',
-    affiliateUrl: ''
+    locationId: 'DD0001',
+    soSao: 5.0,
+    diemNoiBat: '',
+    diaChi: '',
+    viDo: '',
+    kinhDo: '',
+    price: 1500000,
+    donViTinh: '/đêm',
+    affiliateUrl: 'https://www.agoda.com',
+    moTa: '',
+    image: '/images/vinh_ha_long.jpg',
+    mediaList: [],
+    maLoaiHinhList: ['LH0004'],
+    tienNghiList: ['TN0001', 'TN0002'],
   });
 
   // ================= NẠP DỮ LIỆU TỪ BACKEND API =================
@@ -120,9 +129,10 @@ const Admin = () => {
 
     const loadAllData = async () => {
       try {
-        const [catsRes, actsRes, locsRes, attsRes, hotsRes, revsRes, usrsRes, statsRes] = await Promise.allSettled([
+        const [catsRes, actsRes, amensRes, locsRes, attsRes, hotsRes, revsRes, usrsRes, statsRes] = await Promise.allSettled([
           api.locations?.getCategories ? api.locations.getCategories() : Promise.resolve([]),
           api.locations?.getActivities ? api.locations.getActivities() : Promise.resolve([]),
+          api.locations?.getAmenities ? api.locations.getAmenities() : Promise.resolve([]),
           api.locations.getAll(),
           api.attractions.getAll(),
           api.hotels.getAll(),
@@ -133,12 +143,18 @@ const Admin = () => {
 
         if (!isMounted) return;
 
-        // 0. Danh mục loại hình & Hoạt động
+        // 0. Danh mục loại hình, Hoạt động & Tiện nghi
         if (catsRes.status === 'fulfilled' && Array.isArray(catsRes.value)) {
           setAllCategories(catsRes.value);
         }
         if (actsRes.status === 'fulfilled' && Array.isArray(actsRes.value)) {
           setAllActivities(actsRes.value);
+        }
+        if (amensRes.status === 'fulfilled' && Array.isArray(amensRes.value)) {
+          const cleanAmens = amensRes.value.filter(
+            (a) => !a.ten?.toLowerCase().includes('gym') && !a.ten?.toLowerCase().includes('fitness')
+          );
+          setAllAmenities(cleanAmens);
         }
 
         // 1. Danh sách địa danh
@@ -193,12 +209,28 @@ const Admin = () => {
             name: hotel.ten || hotel.name,
             locationId: hotel.maDiaDiem || hotel.locationId,
             locationName: hotel.tenDiaDiem || '',
-            tags: Array.isArray(hotel.loaiHinh) && hotel.loaiHinh.length > 0 ? hotel.loaiHinh : ['Nghỉ dưỡng'],
+            tinhThanh: hotel.tinhThanh || '',
+            soSao: parseFloat(hotel.soSao || 5.0),
+            rating: parseFloat(hotel.diemDanhGia || hotel.soSao || 5.0),
+            soDanhGia: hotel.soDanhGia || 0,
+            giaThamKhao: hotel.giaThamKhao || 0,
             price: hotel.giaThamKhao ? new Intl.NumberFormat('vi-VN').format(hotel.giaThamKhao) + 'đ' : (hotel.price || '1.500.000đ'),
-            rating: parseFloat(hotel.diemDanhGia || hotel.soSao || hotel.rating || 4.8),
-            image: hotel.anhDaiDien || hotel.hinhAnh || hotel.image || '/images/mui_ne.jpg',
-            coreAmenities: Array.isArray(hotel.tienNghi) && hotel.tienNghi.length > 0 ? hotel.tienNghi : ['Hồ bơi ngoài trời', 'Spa thư giãn'],
-            affiliateUrl: hotel.bookingUrl || hotel.affiliateUrl || 'https://www.agoda.com',
+            donViTinh: hotel.donViTinh || '/đêm',
+            diemNoiBat: hotel.diemNoiBat || '',
+            diaChi: hotel.diaChi || '',
+            viDo: hotel.viDo !== undefined && hotel.viDo !== null ? hotel.viDo : '',
+            kinhDo: hotel.kinhDo !== undefined && hotel.kinhDo !== null ? hotel.kinhDo : '',
+            moTa: hotel.moTa || '',
+            image: hotel.anhDaiDien || hotel.hinhAnh || hotel.image || '/images/vinh_ha_long.jpg',
+            affiliateUrl: hotel.bookingUrl || hotel.booking_url || hotel.affiliateUrl || 'https://www.agoda.com',
+            tags: Array.isArray(hotel.loaiHinh) && hotel.loaiHinh.length > 0 ? hotel.loaiHinh : ['Nghỉ dưỡng'],
+            maLoaiHinhList: Array.isArray(hotel.maLoaiHinh) ? hotel.maLoaiHinh : [],
+            coreAmenities: Array.isArray(hotel.tienNghi) && hotel.tienNghi.length > 0
+              ? hotel.tienNghi.map((tn) => typeof tn === 'object' ? tn.ten : tn)
+              : ['Hồ bơi vô cực view biển/núi', 'Spa & Trị liệu thảo mộc'],
+            tienNghiList: Array.isArray(hotel.tienNghi)
+              ? hotel.tienNghi.map((tn) => typeof tn === 'object' ? tn.maTienNghi : tn)
+              : [],
             status: 'Active',
           }));
           setServices(mappedHots);
@@ -216,7 +248,9 @@ const Admin = () => {
               locationName: r.locationName || r.location_name || '',
               userName: r.userName || r.user_name || 'Người dùng',
               userEmail: r.userEmail || r.user_email || '',
-              userAvatar: r.userAvatar || r.user_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop',
+              userAvatar: (r.userAvatar || r.user_avatar) && !(r.userAvatar || r.user_avatar).includes('photo-1535713875002')
+                ? (r.userAvatar || r.user_avatar)
+                : '/images/default-avatar.svg',
               rating: parseFloat(r.rating || 5.0),
               comment: r.comment || '',
               createdAt: r.createdAt ? (typeof r.createdAt === 'string' && r.createdAt.includes('/') ? r.createdAt : new Date(r.createdAt).toLocaleString('vi-VN')) : '20/10/2026',
@@ -235,8 +269,8 @@ const Admin = () => {
               name: u.hoten || u.name,
               email: u.email,
               role: u.vaitro || u.role || 'Member',
-              scansCount: u.scansCount || 0,
-              wishlistCount: u.wishlistCount || 0,
+              scansCount: u.scansCount !== undefined ? u.scansCount : (u.soLuotQuet || u.so_luot_quet || u.scans_count || 0),
+              wishlistCount: u.wishlistCount !== undefined ? u.wishlistCount : (u.soYeuThich || u.so_yeu_thich || u.wishlist_count || 0),
               joinedDate: u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : (u.joinedDate || '01/01/2026'),
               status: u.trangthai || u.status || 'Active',
             }));
@@ -319,7 +353,7 @@ const Admin = () => {
   };
 
   const handleSaveDestination = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setIsSavingDest(true);
     try {
       let finalImageUrl = destForm.image || '/images/vinh_ha_long.jpg';
@@ -327,8 +361,8 @@ const Admin = () => {
       // Nếu người dùng chọn tải ảnh mới từ máy tính, upload trước
       if (destForm.imageFile) {
         const uploadRes = await api.admin.uploadLocationImage(destForm.imageFile);
-        if (uploadRes && uploadRes.url) {
-          finalImageUrl = uploadRes.url;
+        if (uploadRes && (uploadRes.url || uploadRes.data?.url)) {
+          finalImageUrl = uploadRes.url || uploadRes.data.url;
         }
       }
 
@@ -356,7 +390,7 @@ const Admin = () => {
 
       if (editingDestination) {
         const res = await api.admin.updateLocation(editingDestination.id, payload);
-        const updatedData = res?.data;
+        const updatedLoc = res?.data;
         setDestinations(prev => prev.map(d => {
           if (String(d.id) === String(editingDestination.id)) {
             return {
@@ -365,14 +399,14 @@ const Admin = () => {
               province: payload.tinhThanh,
               danhHieu: payload.danhHieu || '',
               moTa: payload.moTa || '',
-              viDo: payload.viDo,
-              kinhDo: payload.kinhDo,
+              viDo: payload.viDo !== null && payload.viDo !== undefined ? payload.viDo : '',
+              kinhDo: payload.kinhDo !== null && payload.kinhDo !== undefined ? payload.kinhDo : '',
               quyMo: payload.quyMo || '',
               thoiDiemLyTuong: payload.thoiDiemLyTuong || '',
               image: payload.anhUrl,
-              categories: destForm.categories?.length > 0 ? destForm.categories : d.categories,
-              maLoaiHinhList: destForm.maLoaiHinhList || d.maLoaiHinhList,
-              category: destForm.categories?.[0] || d.category || 'Thiên nhiên',
+              categories: updatedLoc?.loaiHinh || (destForm.categories?.length > 0 ? destForm.categories : d.categories),
+              maLoaiHinhList: updatedLoc?.maLoaiHinh || (destForm.maLoaiHinhList || d.maLoaiHinhList),
+              category: updatedLoc?.loaiHinh?.[0] || destForm.categories?.[0] || d.category || 'Thiên nhiên',
             };
           }
           return d;
@@ -380,21 +414,21 @@ const Admin = () => {
       } else {
         const res = await api.admin.createLocation(payload);
         const createdLoc = res?.data;
-        const createdId = createdLoc?.maDiaDiem || `DD${String(destinations.length + 1).padStart(4, '0')}`;
+        const createdId = createdLoc?.maDiaDiem || createdLoc?.madiadiem || `DD${String(destinations.length + 1).padStart(4, '0')}`;
         const newDest = {
           id: createdId,
           name: payload.ten,
           province: payload.tinhThanh,
           danhHieu: payload.danhHieu || '',
           moTa: payload.moTa || '',
-          viDo: payload.viDo,
-          kinhDo: payload.kinhDo,
+          viDo: payload.viDo !== null && payload.viDo !== undefined ? payload.viDo : '',
+          kinhDo: payload.kinhDo !== null && payload.kinhDo !== undefined ? payload.kinhDo : '',
           quyMo: payload.quyMo || '',
           thoiDiemLyTuong: payload.thoiDiemLyTuong || '',
           image: payload.anhUrl,
-          categories: destForm.categories?.length > 0 ? destForm.categories : ['Thiên nhiên'],
-          maLoaiHinhList: destForm.maLoaiHinhList || ['LH0001'],
-          category: destForm.categories?.[0] || 'Thiên nhiên',
+          categories: createdLoc?.loaiHinh || (destForm.categories?.length > 0 ? destForm.categories : ['Thiên nhiên']),
+          maLoaiHinhList: createdLoc?.maLoaiHinh || (destForm.maLoaiHinhList || ['LH0001']),
+          category: createdLoc?.loaiHinh?.[0] || destForm.categories?.[0] || 'Thiên nhiên',
           status: 'Active',
           totalHotels: 0,
           totalAttractions: 0
@@ -750,67 +784,345 @@ const Admin = () => {
     setServiceForm({
       name: '',
       locationId: destinations[0]?.id || 'DD0001',
-      tags: ['Nghỉ dưỡng', 'Thiên nhiên'],
-      price: '1.500.000đ',
-      rating: 4.8,
-      image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=600&auto=format&fit=crop',
-      coreAmenities: 'Hồ bơi vô cực ngoài trời, Khu spa thư giãn, Trị liệu khoáng nóng',
-      affiliateUrl: 'https://www.agoda.com'
+      soSao: 5.0,
+      diemNoiBat: '',
+      diaChi: '',
+      viDo: '',
+      kinhDo: '',
+      price: 1500000,
+      donViTinh: '/đêm',
+      affiliateUrl: 'https://www.agoda.com',
+      moTa: '',
+      image: '/images/vinh_ha_long.jpg',
+      mediaList: [],
+      maLoaiHinhList: ['LH0004'],
+      tienNghiList: [
+        { maTienNghi: 'TN0001', ten: 'Hồ bơi vô cực view biển/núi', ghiChu: '', thuTu: 1 },
+        { maTienNghi: 'TN0002', ten: 'Spa & Trị liệu thảo mộc', ghiChu: '', thuTu: 2 },
+      ],
     });
     setIsServiceModalOpen(true);
   };
 
-  const handleOpenEditService = (service) => {
+  const handleOpenEditService = async (service) => {
     setEditingService(service);
+    const initialMedia = (service.image && !service.image.startsWith('blob:'))
+      ? [{ url: service.image, type: 'image', thuTu: 1 }]
+      : [];
+
+    const initialCategories = Array.isArray(service.maLoaiHinhList) && service.maLoaiHinhList.length > 0
+      ? service.maLoaiHinhList
+      : (Array.isArray(service.tags)
+          ? service.tags.map((t) => {
+              const found = allCategories.find((c) => c.ten === t || c.maLoaiHinh === t);
+              return found ? found.maLoaiHinh : (t && String(t).startsWith('LH') ? t : null);
+            }).filter(Boolean)
+          : ['LH0004']);
+
+    const initialAmenities = Array.isArray(service.tienNghiList) && service.tienNghiList.length > 0
+      ? service.tienNghiList.map((tn, idx) => {
+          if (typeof tn === 'object' && tn !== null) {
+            return {
+              maTienNghi: tn.maTienNghi || tn.matiennghi,
+              ten: tn.ten || '',
+              ghiChu: tn.ghiChu || tn.ghichu || '',
+              thuTu: tn.thuTu || tn.thutu || idx + 1,
+            };
+          }
+          const found = allAmenities.find((am) => am.ten === tn || am.maTienNghi === tn);
+          return {
+            maTienNghi: found ? found.maTienNghi : (String(tn).startsWith('TN') ? tn : null),
+            ten: found ? found.ten : tn,
+            ghiChu: '',
+            thuTu: idx + 1,
+          };
+        })
+      : (Array.isArray(service.coreAmenities)
+          ? service.coreAmenities.map((a, idx) => {
+              const aName = typeof a === 'string' ? a : a.ten;
+              const found = allAmenities.find((am) => am.ten === aName || am.maTienNghi === aName);
+              return {
+                maTienNghi: found ? found.maTienNghi : (aName && String(aName).startsWith('TN') ? aName : null),
+                ten: found ? found.ten : aName,
+                ghiChu: typeof a === 'object' ? (a.ghiChu || a.ghichu || '') : '',
+                thuTu: idx + 1,
+              };
+            })
+          : [
+              { maTienNghi: 'TN0001', ten: 'Hồ bơi vô cực view biển/núi', ghiChu: '', thuTu: 1 },
+              { maTienNghi: 'TN0002', ten: 'Spa & Trị liệu thảo mộc', ghiChu: '', thuTu: 2 },
+            ]);
+
     setServiceForm({
-      ...service,
-      coreAmenities: Array.isArray(service.coreAmenities) ? service.coreAmenities.join(', ') : service.coreAmenities
+      id: service.id,
+      name: service.name || '',
+      locationId: service.locationId || destinations[0]?.id || 'DD0001',
+      soSao: service.soSao || 5.0,
+      diemNoiBat: service.diemNoiBat || '',
+      diaChi: service.diaChi || '',
+      viDo: service.viDo !== undefined && service.viDo !== null ? service.viDo : '',
+      kinhDo: service.kinhDo !== undefined && service.kinhDo !== null ? service.kinhDo : '',
+      price: service.giaThamKhao || (parseInt(String(service.price).replace(/\D/g, ''), 10) || 1500000),
+      donViTinh: service.donViTinh || '/đêm',
+      affiliateUrl: service.affiliateUrl || service.bookingUrl || 'https://www.agoda.com',
+      moTa: service.moTa || '',
+      image: service.image || '/images/vinh_ha_long.jpg',
+      mediaList: initialMedia,
+      maLoaiHinhList: initialCategories,
+      tienNghiList: initialAmenities,
     });
     setIsServiceModalOpen(true);
+
+    try {
+      const detail = await api.hotels.getById(service.id);
+      if (detail) {
+        const fullMedia = Array.isArray(detail.media) && detail.media.length > 0
+          ? detail.media.map((m, idx) => ({
+              url: m.url,
+              type: m.type || 'image',
+              thuTu: m.thuTu || idx + 1,
+            }))
+          : initialMedia;
+
+        const detailLoaiHinh = Array.isArray(detail.maLoaiHinh) && detail.maLoaiHinh.length > 0
+          ? detail.maLoaiHinh
+          : (Array.isArray(detail.loaiHinh)
+              ? detail.loaiHinh.map((name) => {
+                  const found = allCategories.find((c) => c.ten === name || c.maLoaiHinh === name);
+                  return found ? found.maLoaiHinh : (name && String(name).startsWith('LH') ? name : null);
+                }).filter(Boolean)
+              : initialCategories);
+
+        const detailTienNghi = Array.isArray(detail.tienNghi) && detail.tienNghi.length > 0
+          ? detail.tienNghi.map((tn, idx) => ({
+              maTienNghi: tn.maTienNghi || tn.matiennghi,
+              ten: tn.ten || '',
+              ghiChu: tn.ghiChu || tn.ghichu || '',
+              thuTu: tn.thuTu || tn.thutu || idx + 1,
+            }))
+          : initialAmenities;
+
+        setServiceForm((prev) => ({
+          ...prev,
+          name: detail.ten || prev.name,
+          locationId: detail.maDiaDiem || prev.locationId,
+          soSao: detail.soSao || prev.soSao,
+          diemNoiBat: detail.diemNoiBat || prev.diemNoiBat,
+          diaChi: detail.diaChi || prev.diaChi,
+          viDo: detail.viDo !== undefined && detail.viDo !== null ? detail.viDo : prev.viDo,
+          kinhDo: detail.kinhDo !== undefined && detail.kinhDo !== null ? detail.kinhDo : prev.kinhDo,
+          price: detail.giaThamKhao || prev.price,
+          donViTinh: detail.donViTinh || prev.donViTinh,
+          affiliateUrl: detail.bookingUrl || prev.affiliateUrl,
+          moTa: detail.moTa || prev.moTa,
+          image: fullMedia[0]?.url || prev.image,
+          mediaList: fullMedia,
+          maLoaiHinhList: detailLoaiHinh.length > 0 ? detailLoaiHinh : prev.maLoaiHinhList,
+          tienNghiList: detailTienNghi.length > 0 ? detailTienNghi : prev.tienNghiList,
+        }));
+      }
+    } catch (err) {
+      console.warn('Không thể tải chi tiết khách sạn:', err);
+    }
   };
 
   const handleSaveService = async (e) => {
     e.preventDefault();
-    const locObj = destinations.find(d => String(d.id) === String(serviceForm.locationId));
-    const amenitiesArr = (serviceForm.coreAmenities || '').split(',').map(s => s.trim()).filter(Boolean);
-    const numericPrice = parseInt(String(serviceForm.price).replace(/\D/g, ''), 10) || 1500000;
+    if (!serviceForm.name || !serviceForm.name.trim()) {
+      setGeneralNotice({
+        title: 'Thông tin chưa đầy đủ',
+        message: 'Vui lòng nhập tên khách sạn / resort.',
+      });
+      return;
+    }
+    if (!serviceForm.locationId) {
+      setGeneralNotice({
+        title: 'Thông tin chưa đầy đủ',
+        message: 'Vui lòng chọn địa danh trực thuộc cho khách sạn.',
+      });
+      return;
+    }
 
     try {
+      setIsSavingService(true);
+
+      const mediaItems = Array.isArray(serviceForm.mediaList) && serviceForm.mediaList.length > 0
+        ? serviceForm.mediaList
+        : (serviceForm.image && !serviceForm.image.startsWith('blob:') ? [{ url: serviceForm.image, type: 'image' }] : []);
+
+      const resolvedMediaList = [];
+      for (let i = 0; i < mediaItems.length; i++) {
+        const item = mediaItems[i];
+        let mediaUrl = item.url;
+        if (item.file) {
+          const uploadRes = await api.admin.uploadLocationImage(item.file);
+          const uploadedUrl = uploadRes?.url || uploadRes?.data?.url;
+          if (uploadedUrl) {
+            mediaUrl = uploadedUrl;
+          }
+        }
+        if (mediaUrl && !mediaUrl.startsWith('blob:')) {
+          resolvedMediaList.push({
+            mediaUrl,
+            mediaType: item.type || 'image',
+            thuTu: resolvedMediaList.length + 1,
+          });
+        }
+      }
+
+      if (resolvedMediaList.length === 0 && serviceForm.image && !serviceForm.image.startsWith('blob:')) {
+        resolvedMediaList.push({
+          mediaUrl: serviceForm.image,
+          mediaType: 'image',
+          thuTu: 1,
+        });
+      }
+
+      const primaryImageUrl = resolvedMediaList[0]?.mediaUrl || (serviceForm.image && !serviceForm.image.startsWith('blob:') ? serviceForm.image : '/images/vinh_ha_long.jpg');
+      const locObj = destinations.find((d) => String(d.id) === String(serviceForm.locationId));
+
+      const numericPrice = typeof serviceForm.price === 'number'
+        ? serviceForm.price
+        : (parseInt(String(serviceForm.price).replace(/\D/g, ''), 10) || 1500000);
+
+      const cleanMaLoaiHinhList = (serviceForm.maLoaiHinhList || []).map((lh) => {
+        const raw = typeof lh === 'object' && lh !== null ? (lh.maLoaiHinh || lh.id) : lh;
+        if (typeof raw === 'string' && !raw.startsWith('LH')) {
+          const found = allCategories.find((c) => c.ten === raw || c.maLoaiHinh === raw);
+          return found ? found.maLoaiHinh : null;
+        }
+        return raw;
+      }).filter(Boolean);
+
+      const cleanTienNghiList = (serviceForm.tienNghiList || []).map((tn, idx) => {
+        const ten = typeof tn === 'object' && tn !== null ? (tn.ten || tn.name || '') : tn;
+        const maTn = typeof tn === 'object' && tn !== null ? (tn.maTienNghi || tn.id || null) : (String(tn).startsWith('TN') ? tn : null);
+        const ghiChu = typeof tn === 'object' && tn !== null ? (tn.ghiChu || tn.ghichu || '') : '';
+        const thuTu = typeof tn === 'object' && tn !== null ? (tn.thuTu || idx + 1) : idx + 1;
+        const icon = typeof tn === 'object' && tn !== null ? (tn.icon || 'sparkles') : 'sparkles';
+
+        if (maTn && String(maTn).startsWith('TN')) {
+          return { maTienNghi: maTn, ten, ghiChu, thuTu, icon };
+        }
+        if (ten) {
+          const found = allAmenities.find((a) => a.ten === ten || a.maTienNghi === ten);
+          return {
+            maTienNghi: found ? found.maTienNghi : null,
+            ten: found ? found.ten : ten,
+            ghiChu,
+            thuTu,
+            icon: found ? found.icon : icon,
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
       const payload = {
         maDiaDiem: serviceForm.locationId,
-        ten: serviceForm.name,
-        soSao: serviceForm.rating || 4.8,
+        ten: serviceForm.name.trim(),
+        soSao: parseFloat(serviceForm.soSao) || 5.0,
+        moTa: serviceForm.moTa || '',
+        viDo: serviceForm.viDo ? parseFloat(serviceForm.viDo) : null,
+        kinhDo: serviceForm.kinhDo ? parseFloat(serviceForm.kinhDo) : null,
+        diaChi: serviceForm.diaChi || '',
         giaThamKhao: numericPrice,
-        booking_url: serviceForm.affiliateUrl,
-        mediaList: serviceForm.image ? [{ mediaUrl: serviceForm.image, mediaType: 'image', thuTu: 1 }] : [],
+        diemNoiBat: serviceForm.diemNoiBat || '',
+        donViTinh: serviceForm.donViTinh || '/đêm',
+        bookingUrl: serviceForm.affiliateUrl || 'https://www.agoda.com',
+        maLoaiHinhList: cleanMaLoaiHinhList,
+        tienNghiList: cleanTienNghiList,
+        mediaList: resolvedMediaList,
       };
 
+      const matchedCatNames = allCategories
+        .filter((c) => cleanMaLoaiHinhList.includes(c.maLoaiHinh))
+        .map((c) => c.ten);
+
+      const matchedAmenNames = cleanTienNghiList
+        .map((t) => t.ten)
+        .filter(Boolean);
+
       if (editingService) {
-        await api.admin.updateHotel(editingService.id, payload);
-        setServices(prev => prev.map(s => String(s.id) === String(editingService.id) ? {
-          ...s,
-          ...serviceForm,
-          locationName: locObj ? locObj.name : s.locationName,
-          coreAmenities: amenitiesArr
-        } : s));
+        const updateRes = await api.admin.updateHotel(editingService.id, payload);
+        const updatedDetail = updateRes?.data;
+        const savedMedia = (updatedDetail?.media && updatedDetail.media.length > 0)
+          ? updatedDetail.media.map((m, idx) => ({ url: m.url, type: m.type || 'image', thuTu: m.thuTu || idx + 1 }))
+          : resolvedMediaList.map(m => ({ url: m.mediaUrl, type: m.mediaType, thuTu: m.thuTu }));
+        const finalPrimaryImage = savedMedia[0]?.url || primaryImageUrl;
+
+        setServices((prev) =>
+          prev.map((s) =>
+            String(s.id) === String(editingService.id)
+              ? {
+                  ...s,
+                  name: payload.ten,
+                  locationId: payload.maDiaDiem,
+                  locationName: locObj ? locObj.name : s.locationName,
+                  soSao: payload.soSao,
+                  rating: payload.soSao,
+                  moTa: payload.moTa,
+                  viDo: payload.viDo,
+                  kinhDo: payload.kinhDo,
+                  diaChi: payload.diaChi,
+                  giaThamKhao: payload.giaThamKhao,
+                  price: new Intl.NumberFormat('vi-VN').format(payload.giaThamKhao) + 'đ',
+                  donViTinh: payload.donViTinh,
+                  diemNoiBat: payload.diemNoiBat,
+                  affiliateUrl: payload.bookingUrl,
+                  image: finalPrimaryImage,
+                  mediaList: savedMedia,
+                  maLoaiHinhList: cleanMaLoaiHinhList,
+                  tags: matchedCatNames.length > 0 ? matchedCatNames : s.tags,
+                  tienNghiList: cleanTienNghiList,
+                  coreAmenities: matchedAmenNames.length > 0 ? matchedAmenNames : s.coreAmenities,
+                }
+              : s
+          )
+        );
       } else {
         const res = await api.admin.createHotel(payload);
-        const createdId = res?.data?.maKhachSan || `KS${String(services.length + 1).padStart(4, '0')}`;
-        const newServ = {
-          ...serviceForm,
+        const createdDetail = res?.data;
+        const createdId = createdDetail?.maKhachSan || `KS${String(services.length + 1).padStart(4, '0')}`;
+        const savedMedia = (createdDetail?.media && createdDetail.media.length > 0)
+          ? createdDetail.media.map((m, idx) => ({ url: m.url, type: m.type || 'image', thuTu: m.thuTu || idx + 1 }))
+          : resolvedMediaList.map(m => ({ url: m.mediaUrl, type: m.mediaType, thuTu: m.thuTu }));
+        const finalPrimaryImage = savedMedia[0]?.url || primaryImageUrl;
+
+        const newHot = {
           id: createdId,
-          locationName: locObj ? locObj.name : (destinations[0]?.name || 'Vịnh Hạ Long'),
-          coreAmenities: amenitiesArr,
-          status: 'Active'
+          name: payload.ten,
+          locationId: payload.maDiaDiem,
+          locationName: locObj ? locObj.name : (destinations[0]?.name || ''),
+          soSao: payload.soSao,
+          rating: payload.soSao,
+          soDanhGia: 0,
+          moTa: payload.moTa,
+          viDo: payload.viDo,
+          kinhDo: payload.kinhDo,
+          diaChi: payload.diaChi,
+          giaThamKhao: payload.giaThamKhao,
+          price: new Intl.NumberFormat('vi-VN').format(payload.giaThamKhao) + 'đ',
+          donViTinh: payload.donViTinh,
+          diemNoiBat: payload.diemNoiBat,
+          affiliateUrl: payload.bookingUrl,
+          image: finalPrimaryImage,
+          mediaList: savedMedia,
+          maLoaiHinhList: cleanMaLoaiHinhList,
+          tags: matchedCatNames.length > 0 ? matchedCatNames : ['Nghỉ dưỡng'],
+          tienNghiList: cleanTienNghiList,
+          coreAmenities: matchedAmenNames.length > 0 ? matchedAmenNames : ['Hồ bơi vô cực view biển/núi'],
+          status: 'Active',
         };
-        setServices(prev => [...prev, newServ]);
+        setServices((prev) => [newHot, ...prev]);
       }
       setIsServiceModalOpen(false);
     } catch (err) {
       setGeneralNotice({
         title: 'Lỗi khi lưu thông tin khách sạn',
-        message: err.message || 'Không thể lưu thông tin khách sạn vào cơ sở dữ liệu.'
+        message: err.message || 'Không thể lưu thông tin khách sạn vào cơ sở dữ liệu.',
       });
+    } finally {
+      setIsSavingService(false);
     }
   };
 
@@ -1005,14 +1317,11 @@ const Admin = () => {
                 />
               )}
 
-              {/* TAB 3: Khách sạn & Dịch vụ */}
+              {/* TAB 3: Khách sạn */}
               {activeTab === 'services' && (
                 <ServicesTab
-                  services={services.filter(s =>
-                    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    s.locationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    s.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
-                  )}
+                  services={services}
+                  destinations={destinations}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   onOpenAdd={handleOpenAddService}
@@ -1084,7 +1393,10 @@ const Admin = () => {
         serviceForm={serviceForm}
         setServiceForm={setServiceForm}
         destinations={destinations}
+        availableCategories={allCategories}
+        availableAmenities={allAmenities}
         onSave={handleSaveService}
+        isSaving={isSavingService}
       />
 
       {/* POPUP XÁC NHẬN XÓA ĐIỂM CHECK-IN */}

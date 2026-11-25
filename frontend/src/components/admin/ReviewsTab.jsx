@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Search, 
   Star, 
@@ -189,13 +190,13 @@ const ReviewsTab = ({
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50/80 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
               <tr>
-                <th className="py-3.5 px-5">ID</th>
-                <th className="py-3.5 px-5">Thành viên Đánh giá</th>
-                <th className="py-3.5 px-5">Đối tượng &amp; Địa danh</th>
-                <th className="py-3.5 px-5">Số sao &amp; Nội dung nhận xét</th>
-                <th className="py-3.5 px-5">Thời gian</th>
-                <th className="py-3.5 px-5">Kiểm duyệt</th>
-                <th className="py-3.5 px-5 text-right">Thao tác</th>
+                <th className="py-3.5 px-5 whitespace-nowrap">ID</th>
+                <th className="py-3.5 px-5 min-w-[200px]">Thành viên Đánh giá</th>
+                <th className="py-3.5 px-5 min-w-[190px]">Đối tượng &amp; Địa danh</th>
+                <th className="py-3.5 px-5 min-w-[240px]">Số sao &amp; Nội dung nhận xét</th>
+                <th className="py-3.5 px-5 whitespace-nowrap">Thời gian</th>
+                <th className="py-3.5 px-5 whitespace-nowrap min-w-[125px]">Kiểm duyệt</th>
+                <th className="py-3.5 px-5 text-right whitespace-nowrap">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -210,7 +211,7 @@ const ReviewsTab = ({
                 filteredReviews.map((rev) => (
                   <tr key={rev.id} className="hover:bg-slate-50/70 transition-colors">
                     {/* ID */}
-                    <td className="py-4 px-5 font-mono text-xs font-bold text-slate-400">
+                    <td className="py-4 px-5 font-mono text-xs font-bold text-slate-400 whitespace-nowrap">
                       #{rev.id}
                     </td>
 
@@ -218,15 +219,19 @@ const ReviewsTab = ({
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-3">
                         <img
-                          src={rev.userAvatar}
-                          alt={rev.userName}
-                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm shrink-0"
+                          src={rev.userAvatar && !rev.userAvatar.includes('photo-1535713875002') ? rev.userAvatar : '/images/default-avatar.svg'}
+                          alt={rev.userName || 'Thành viên'}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/images/default-avatar.svg';
+                          }}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200/90 shadow-2xs shrink-0 bg-slate-100"
                         />
-                        <div>
-                          <span className="font-bold text-slate-800 text-sm block">
+                        <div className="min-w-0">
+                          <span className="font-bold text-slate-800 text-sm block truncate max-w-[170px]" title={rev.userName}>
                             {rev.userName}
                           </span>
-                          <span className="text-xs text-slate-400 block truncate max-w-[160px]">
+                          <span className="text-xs text-slate-400 block truncate max-w-[170px]" title={rev.userEmail}>
                             {rev.userEmail}
                           </span>
                         </div>
@@ -284,20 +289,20 @@ const ReviewsTab = ({
                     </td>
 
                     {/* Status */}
-                    <td className="py-4 px-5">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
+                    <td className="py-4 px-5 whitespace-nowrap">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap border shadow-2xs transition-colors ${
                         rev.status === 'Approved'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : 'bg-rose-50 text-rose-600 border border-rose-100'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/70'
+                          : 'bg-rose-50 text-rose-700 border-rose-200/80 hover:bg-rose-100/70'
                       }`}>
                         {rev.status === 'Approved' ? (
                           <>
-                            <CheckCircle size={12} />
+                            <CheckCircle size={13} className="text-emerald-600 shrink-0" />
                             <span>Hiển thị</span>
                           </>
                         ) : (
                           <>
-                            <AlertCircle size={12} />
+                            <AlertCircle size={13} className="text-rose-600 shrink-0" />
                             <span>Nghi vấn Spam</span>
                           </>
                         )}
@@ -305,7 +310,7 @@ const ReviewsTab = ({
                     </td>
 
                     {/* Actions */}
-                    <td className="py-4 px-5 text-right">
+                    <td className="py-4 px-5 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
                         {/* Xem chi tiết */}
                         <button
@@ -351,8 +356,8 @@ const ReviewsTab = ({
         </div>
       </div>
 
-      {/* MODAL CHI TIẾT ĐÁNH GIÁ */}
-      {selectedReview && (
+      {/* MODAL CHI TIẾT ĐÁNH GIÁ (RENDER TRỰC TIẾP RA BODY ĐỂ PHỦ KÍN 100% TOÀN BỘ VIEWPORT) */}
+      {selectedReview && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-slate-800 animate-scaleUp">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
@@ -372,13 +377,17 @@ const ReviewsTab = ({
               {/* User info */}
               <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <img
-                  src={selectedReview.userAvatar}
-                  alt={selectedReview.userName}
-                  className="w-12 h-12 rounded-full object-cover border border-white shadow-sm"
+                  src={selectedReview.userAvatar && !selectedReview.userAvatar.includes('photo-1535713875002') ? selectedReview.userAvatar : '/images/default-avatar.svg'}
+                  alt={selectedReview.userName || 'Thành viên'}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/images/default-avatar.svg';
+                  }}
+                  className="w-12 h-12 rounded-full object-cover border border-white shadow-xs shrink-0 bg-slate-100"
                 />
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">{selectedReview.userName}</h4>
-                  <p className="text-xs text-slate-400">{selectedReview.userEmail}</p>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-slate-800 text-sm truncate">{selectedReview.userName}</h4>
+                  <p className="text-xs text-slate-400 truncate">{selectedReview.userEmail}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">Gửi lúc: {selectedReview.createdAt}</p>
                 </div>
               </div>
@@ -428,13 +437,23 @@ const ReviewsTab = ({
 
               {/* Status info */}
               <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-slate-500">Trạng thái hiện tại:</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
+                <span className="text-xs text-slate-500 font-medium">Trạng thái hiện tại:</span>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap border ${
                   selectedReview.status === 'Approved'
-                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                    : 'bg-rose-50 text-rose-600 border border-rose-100'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                    : 'bg-rose-50 text-rose-700 border-rose-200/80'
                 }`}>
-                  {selectedReview.status === 'Approved' ? 'Đã duyệt hiển thị' : 'Nghi vấn Spam'}
+                  {selectedReview.status === 'Approved' ? (
+                    <>
+                      <CheckCircle size={13} className="text-emerald-600 shrink-0" />
+                      <span>Hiển thị (Đã duyệt)</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={13} className="text-rose-600 shrink-0" />
+                      <span>Nghi vấn Spam</span>
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -491,7 +510,8 @@ const ReviewsTab = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

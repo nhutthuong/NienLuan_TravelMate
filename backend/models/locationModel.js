@@ -219,6 +219,13 @@ const createLocation = async (data, maLoaiHinhList = []) => {
   try {
     await client.query('BEGIN');
 
+    // Đồng bộ sequence với max ID hiện tại để đảm bảo ID sinh tự động là DD0011+ không bao giờ trùng lặp
+    try {
+      await client.query("SELECT setval('seq_dia_diem', GREATEST((SELECT COALESCE(MAX(SUBSTRING(madiadiem FROM 3)::INTEGER), 0) FROM diadiem WHERE madiadiem ~ '^DD[0-9]+$'), 10))");
+    } catch (seqErr) {
+      console.warn('[createLocation] Không thể đồng bộ seq_dia_diem:', seqErr.message);
+    }
+
     const viDo = (data.viDo !== undefined && data.viDo !== '' && data.viDo !== null) ? parseFloat(data.viDo) : null;
     const kinhDo = (data.kinhDo !== undefined && data.kinhDo !== '' && data.kinhDo !== null) ? parseFloat(data.kinhDo) : null;
 
@@ -243,10 +250,19 @@ const createLocation = async (data, maLoaiHinhList = []) => {
 
     if (Array.isArray(maLoaiHinhList) && maLoaiHinhList.length > 0) {
       for (const lh of maLoaiHinhList) {
-        await client.query(
-          'INSERT INTO DiaDiem_LoaiHinh (madiadiem, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [newLoc.madiadiem, lh]
-        );
+        const maLh = typeof lh === 'object' && lh !== null ? (lh.maLoaiHinh || lh.maloaihinh || lh.id) : lh;
+        if (maLh) {
+          const foundLh = await client.query(
+            'SELECT maloaihinh FROM LoaiHinhDuLich WHERE maloaihinh = $1 OR LOWER(ten) = LOWER($1) LIMIT 1',
+            [String(maLh).trim()]
+          );
+          if (foundLh.rows.length > 0) {
+            await client.query(
+              'INSERT INTO DiaDiem_LoaiHinh (madiadiem, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [newLoc.madiadiem, foundLh.rows[0].maloaihinh]
+            );
+          }
+        }
       }
     }
 
@@ -303,10 +319,19 @@ const updateLocation = async (maDiaDiem, data, maLoaiHinhList = null) => {
     if (Array.isArray(maLoaiHinhList)) {
       await client.query('DELETE FROM DiaDiem_LoaiHinh WHERE madiadiem = $1', [maDiaDiem]);
       for (const lh of maLoaiHinhList) {
-        await client.query(
-          'INSERT INTO DiaDiem_LoaiHinh (madiadiem, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [maDiaDiem, lh]
-        );
+        const maLh = typeof lh === 'object' && lh !== null ? (lh.maLoaiHinh || lh.maloaihinh || lh.id) : lh;
+        if (maLh) {
+          const foundLh = await client.query(
+            'SELECT maloaihinh FROM LoaiHinhDuLich WHERE maloaihinh = $1 OR LOWER(ten) = LOWER($1) LIMIT 1',
+            [String(maLh).trim()]
+          );
+          if (foundLh.rows.length > 0) {
+            await client.query(
+              'INSERT INTO DiaDiem_LoaiHinh (madiadiem, maloaihinh) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [maDiaDiem, foundLh.rows[0].maloaihinh]
+            );
+          }
+        }
       }
     }
 

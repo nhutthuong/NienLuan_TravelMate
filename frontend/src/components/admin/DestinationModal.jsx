@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   X,
   Save,
@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Info,
   AlertTriangle,
+  AlertCircle,
   UploadCloud,
   CheckCircle2,
   RefreshCw
@@ -540,7 +541,7 @@ const DestinationModal = ({
           </button>
           <button
             type="button"
-            onClick={onSave}
+            onClick={handleSubmit}
             disabled={isSaving}
             className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-6 rounded-xl text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer"
           >

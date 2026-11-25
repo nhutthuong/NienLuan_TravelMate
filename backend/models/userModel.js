@@ -155,24 +155,24 @@ const updatePreferences = async (maNguoiDung, maLoaiHinhList = []) => {
   }
 };
 
-const getAllUsers = async ({ search = '', trangThai = '', page = 1, limit = 20 }) => {
+const getAllUsers = async ({ search = '', trangThai = '', page = 1, limit = 50 }) => {
   const offset = (page - 1) * limit;
   const conditions = [];
   const params = [];
 
   if (search) {
     params.push(`%${search.trim().toLowerCase()}%`);
-    conditions.push(`(LOWER(hoten) LIKE $${params.length} OR LOWER(email) LIKE $${params.length})`);
+    conditions.push(`(LOWER(u.hoten) LIKE $${params.length} OR LOWER(u.email) LIKE $${params.length})`);
   }
 
   if (trangThai && ['Active', 'Banned'].includes(trangThai)) {
     params.push(trangThai);
-    conditions.push(`trangthai = $${params.length}`);
+    conditions.push(`u.trangthai = $${params.length}`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  const countQuery = `SELECT COUNT(*)::INT AS total FROM NguoiDung ${whereClause}`;
+  const countQuery = `SELECT COUNT(*)::INT AS total FROM NguoiDung u ${whereClause}`;
   const countRes = await query(countQuery, params);
   const total = countRes.rows[0].total;
 
@@ -182,16 +182,39 @@ const getAllUsers = async ({ search = '', trangThai = '', page = 1, limit = 20 }
   const offsetIdx = params.length;
 
   const listQuery = `
-    SELECT manguoidung, hoten, email, phuongthucxacthuc, avatar_url, vaitro, trangthai, created_at
-    FROM NguoiDung
+    SELECT 
+      u.manguoidung, 
+      u.hoten, 
+      u.email, 
+      u.phuongthucxacthuc, 
+      u.avatar_url, 
+      u.vaitro, 
+      u.trangthai, 
+      u.created_at,
+      COALESCE((SELECT COUNT(*)::INT FROM LichSuTimKiem ls WHERE ls.manguoidung = u.manguoidung), 0) AS scans_count,
+      COALESCE((SELECT COUNT(*)::INT FROM YeuThich yt WHERE yt.manguoidung = u.manguoidung), 0) AS wishlist_count
+    FROM NguoiDung u
     ${whereClause}
-    ORDER BY created_at DESC
+    ORDER BY u.created_at DESC
     LIMIT $${limitIdx} OFFSET $${offsetIdx}
   `;
   const listRes = await query(listQuery, params);
 
   return {
-    users: listRes.rows,
+    users: listRes.rows.map((row) => ({
+      manguoidung: row.manguoidung,
+      hoten: row.hoten,
+      email: row.email,
+      phuongthucxacthuc: row.phuongthucxacthuc,
+      avatar_url: row.avatar_url,
+      vaitro: row.vaitro,
+      trangthai: row.trangthai,
+      created_at: row.created_at,
+      scansCount: parseInt(row.scans_count || 0, 10),
+      wishlistCount: parseInt(row.wishlist_count || 0, 10),
+      soLuotQuet: parseInt(row.scans_count || 0, 10),
+      soYeuThich: parseInt(row.wishlist_count || 0, 10),
+    })),
     total,
     page,
     limit,

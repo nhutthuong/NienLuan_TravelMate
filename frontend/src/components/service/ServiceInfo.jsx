@@ -167,44 +167,44 @@ const ServiceInfo = ({ data, isHotel, isAttraction }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
 
-            {/* Bản đồ định vị GPS từ CSDL */}
-            {data.viDo && data.kinhDo && (
-              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 shadow-2xs">
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Vị trí định vị GPS trên bản đồ
-                    </span>
-                    <span className="font-mono text-[11px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
-                      {Number(data.viDo).toFixed(4)}°N, {Number(data.kinhDo).toFixed(4)}°E
-                    </span>
-                  </div>
-                  <a
-                    href={`https://www.google.com/maps?q=${data.viDo},${data.kinhDo}+(${encodeURIComponent(data.ten)})&hl=vi`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    <span>Mở Google Maps</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-                <div className="w-full h-56 sm:h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
-                  <iframe
-                    src={`https://maps.google.com/maps?q=${data.viDo},${data.kinhDo}&hl=vi&z=15&output=embed`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title={`Bản đồ ${data.ten}`}
-                  />
-                </div>
+        {/* Bản đồ định vị GPS từ CSDL (Hiển thị cho cả Khách sạn và Điểm tham quan) */}
+        {data.viDo !== undefined && data.viDo !== null && data.kinhDo !== undefined && data.kinhDo !== null && (
+          <div className="mt-6 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Vị trí định vị GPS trên bản đồ
+                </span>
+                <span className="font-mono text-[11px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                  {Number(data.viDo).toFixed(4)}°N, {Number(data.kinhDo).toFixed(4)}°E
+                </span>
               </div>
-            )}
+              <a
+                href={`https://www.google.com/maps?q=${data.viDo},${data.kinhDo}+(${encodeURIComponent(data.ten)})&hl=vi`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <span>Mở Google Maps</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <div className="w-full h-56 sm:h-64 rounded-xl overflow-hidden border border-slate-200 shadow-inner bg-slate-100">
+              <iframe
+                src={`https://maps.google.com/maps?q=${data.viDo},${data.kinhDo}&hl=vi&z=15&output=embed`}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`Bản đồ ${data.ten}`}
+              />
+            </div>
           </div>
         )}
       </section>

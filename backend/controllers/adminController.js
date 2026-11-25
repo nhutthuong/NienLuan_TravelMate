@@ -25,7 +25,7 @@ const getUsers = async (req, res) => {
       search: search || '',
       trangThai: trangThai || '',
       page: parseInt(page || '1', 10),
-      limit: parseInt(limit || '20', 10),
+      limit: parseInt(limit || '50', 10),
     });
     return res.status(200).json(result);
   } catch (err) {

@@ -109,7 +109,7 @@ const UsersTab = ({
                         )}
                       </button>
                     ) : (
-                      <span className="text-xs text-slate-400 italic font-medium">Admin Tối Cao</span>
+                      <span className="text-xs text-slate-400 italic font-medium">Admin</span>
                     )}
                   </td>
                 </tr>
